@@ -40,6 +40,7 @@
 // rewrite_filter_names.cc is automatically generated from
 // rewrite_filter_names.gperf.
 
+#include "base/basictypes.h"
 #include "net/instaweb/rewriter/public/rewrite_options.h"
 #include "pagespeed/kernel/base/string_util.h"
 
@@ -129,6 +130,7 @@ struct FilterMap {
 "outline_css",                       RewriteOptions::kOutlineCss
 "outline_javascript",                RewriteOptions::kOutlineJavascript
 "pedantic",                          RewriteOptions::kPedantic
+"prioritize_lcp_images",             RewriteOptions::kPrioritizeLcpImages
 "prioritize_critical_css",           RewriteOptions::kPrioritizeCriticalCss
 "recompress_jpeg",                   RewriteOptions::kRecompressJpeg
 "recompress_png",                    RewriteOptions::kRecompressPng
