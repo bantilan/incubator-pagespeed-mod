@@ -36,7 +36,7 @@ namespace net_instaweb {
 
 class ExpensiveOperationRpcContext : public ExpensiveOperationContext {
  public:
-  ExpensiveOperationRpcContext(CentralControllerRpcService::StubInterface* stub,
+  ExpensiveOperationRpcContext(grpc::CentralControllerRpcService::StubInterface* stub,
                                ::grpc::CompletionQueue* queue,
                                ThreadSystem* thread_system,
                                MessageHandler* handler,

@@ -36,7 +36,7 @@ namespace net_instaweb {
 
 class ScheduleRewriteRpcContext : public ScheduleRewriteContext {
  public:
-  ScheduleRewriteRpcContext(CentralControllerRpcService::StubInterface* stub,
+  ScheduleRewriteRpcContext(grpc::CentralControllerRpcService::StubInterface* stub,
                             ::grpc::CompletionQueue* queue,
                             ThreadSystem* thread_system,
                             MessageHandler* handler,

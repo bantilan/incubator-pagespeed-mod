@@ -50,10 +50,10 @@ namespace net_instaweb {
 class ScheduleRewriteRpcHandler
     : public RequestResultRpcHandler<
           ScheduleRewriteRpcHandler, ScheduleRewriteController,
-          CentralControllerRpcService::AsyncService, ScheduleRewriteRequest,
+          grpc::CentralControllerRpcService::AsyncService, ScheduleRewriteRequest,
           ScheduleRewriteResponse> {
  protected:
-  ScheduleRewriteRpcHandler(CentralControllerRpcService::AsyncService* service,
+  ScheduleRewriteRpcHandler(grpc::CentralControllerRpcService::AsyncService* service,
                             ::grpc::ServerCompletionQueue* cq,
                             ScheduleRewriteController* controller);
 
@@ -63,7 +63,7 @@ class ScheduleRewriteRpcHandler
   void HandleClientResult(const ScheduleRewriteRequest& req) override;
   void HandleOperationFailed() override;
 
-  void InitResponder(CentralControllerRpcService::AsyncService* service,
+  void InitResponder(grpc::CentralControllerRpcService::AsyncService* service,
                      ::grpc::ServerContext* ctx, ReaderWriterT* responder,
                      ::grpc::ServerCompletionQueue* cq,
                      void* callback) override;

@@ -26,7 +26,7 @@
 namespace net_instaweb {
 
 ScheduleRewriteRpcHandler::ScheduleRewriteRpcHandler(
-    CentralControllerRpcService::AsyncService* service,
+    grpc::CentralControllerRpcService::AsyncService* service,
     ::grpc::ServerCompletionQueue* cq, ScheduleRewriteController* controller)
     : RequestResultRpcHandler(service, cq, controller) {}
 
@@ -70,7 +70,7 @@ void ScheduleRewriteRpcHandler::HandleOperationFailed() {
 }
 
 void ScheduleRewriteRpcHandler::InitResponder(
-    CentralControllerRpcService::AsyncService* service,
+    grpc::CentralControllerRpcService::AsyncService* service,
     ::grpc::ServerContext* ctx, ReaderWriterT* responder,
     ::grpc::ServerCompletionQueue* cq, void* callback) {
   service->RequestScheduleRewrite(ctx, responder, cq, cq, callback);

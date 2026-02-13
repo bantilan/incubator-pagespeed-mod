@@ -37,7 +37,7 @@ class ScheduleRewriteRpcContext::ScheduleRewriteRequestResultRpcClient
                                     ScheduleRewriteCallback> {
  public:
   ScheduleRewriteRequestResultRpcClient(
-      const GoogleString& key, CentralControllerRpcService::StubInterface* stub,
+      const GoogleString& key, grpc::CentralControllerRpcService::StubInterface* stub,
       ::grpc::CompletionQueue* queue, ThreadSystem* thread_system,
       MessageHandler* handler, ScheduleRewriteCallback* callback)
       : RequestResultRpcClient(queue, thread_system, handler, callback),
@@ -47,7 +47,7 @@ class ScheduleRewriteRpcContext::ScheduleRewriteRequestResultRpcClient
   }
 
   std::unique_ptr<RequestResultRpcClient::ReaderWriter> StartRpc(
-      CentralControllerRpcService::StubInterface* stub,
+      grpc::CentralControllerRpcService::StubInterface* stub,
       ::grpc::ClientContext* context, ::grpc::CompletionQueue* queue,
       void* tag) override {
     return stub->AsyncScheduleRewrite(context, queue, tag);
@@ -76,7 +76,7 @@ class ScheduleRewriteRpcContext::ScheduleRewriteRequestResultRpcClient
 };
 
 ScheduleRewriteRpcContext::ScheduleRewriteRpcContext(
-    CentralControllerRpcService::StubInterface* stub,
+    grpc::CentralControllerRpcService::StubInterface* stub,
     ::grpc::CompletionQueue* queue, ThreadSystem* thread_system,
     MessageHandler* handler, ScheduleRewriteCallback* callback)
     : client_(new ScheduleRewriteRequestResultRpcClient(

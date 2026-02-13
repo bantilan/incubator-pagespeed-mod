@@ -143,7 +143,7 @@ class RequestResultRpcClient {
   }
 
   // Actually start the RPC by having the client call RequestFoo on the stub.
-  void Start(CentralControllerRpcService::StubInterface* stub) {
+  void Start(grpc::CentralControllerRpcService::StubInterface* stub) {
     ScopedMutex lock(mutex_.get());
     rpc_->SetReaderWriter(
         StartRpc(stub, rpc_->context(), queue_,
@@ -173,7 +173,7 @@ class RequestResultRpcClient {
   // Delegate for the client to call AsyncFoo for the appropriate RPC on the
   // stub.
   virtual std::unique_ptr<ReaderWriter> StartRpc(
-      CentralControllerRpcService::StubInterface* stub,
+      grpc::CentralControllerRpcService::StubInterface* stub,
       ::grpc::ClientContext* context, ::grpc::CompletionQueue* queue,
       void* tag) = 0;
 

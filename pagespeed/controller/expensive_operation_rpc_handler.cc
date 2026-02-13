@@ -22,7 +22,7 @@
 namespace net_instaweb {
 
 ExpensiveOperationRpcHandler::ExpensiveOperationRpcHandler(
-    CentralControllerRpcService::AsyncService* service,
+    grpc::CentralControllerRpcService::AsyncService* service,
     ::grpc::ServerCompletionQueue* cq, ExpensiveOperationController* controller)
     : RequestResultRpcHandler(service, cq, controller) {}
 
@@ -41,7 +41,7 @@ void ExpensiveOperationRpcHandler::HandleOperationFailed() {
 }
 
 void ExpensiveOperationRpcHandler::InitResponder(
-    CentralControllerRpcService::AsyncService* service,
+    grpc::CentralControllerRpcService::AsyncService* service,
     ::grpc::ServerContext* ctx, ReaderWriterT* responder,
     ::grpc::ServerCompletionQueue* cq, void* callback) {
   service->RequestScheduleExpensiveOperation(ctx, responder, cq, cq, callback);
