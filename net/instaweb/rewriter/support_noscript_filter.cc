@@ -38,9 +38,12 @@
 namespace net_instaweb {
 
 SupportNoscriptFilter::SupportNoscriptFilter(RewriteDriver* rewrite_driver)
-    : rewrite_driver_(rewrite_driver), should_insert_noscript_(true) {}
+    : rewrite_driver_(rewrite_driver),
+      should_insert_noscript_(true) {
+}
 
-SupportNoscriptFilter::~SupportNoscriptFilter() {}
+SupportNoscriptFilter::~SupportNoscriptFilter() {
+}
 
 void SupportNoscriptFilter::DetermineEnabled(GoogleString* disabled_reason) {
   // Insert a NOSCRIPT tag only if at least one of the filters requiring
@@ -51,7 +54,7 @@ void SupportNoscriptFilter::DetermineEnabled(GoogleString* disabled_reason) {
 
 void SupportNoscriptFilter::StartElement(HtmlElement* element) {
   if (should_insert_noscript_ && element->keyword() == HtmlName::kBody) {
-    std::unique_ptr<GoogleUrl> url_with_psa_off(
+    scoped_ptr<GoogleUrl> url_with_psa_off(
         rewrite_driver_->google_url().CopyAndAddQueryParam(
             RewriteQuery::kPageSpeed, RewriteQuery::kNoscriptValue));
     GoogleString escaped_url;
@@ -59,8 +62,8 @@ void SupportNoscriptFilter::StartElement(HtmlElement* element) {
     // TODO(sriharis): Replace the usage of HtmlCharactersNode with HtmlElement
     // and Attribute.
     HtmlCharactersNode* noscript_node = rewrite_driver_->NewCharactersNode(
-        element, absl::StrFormat(kNoScriptRedirectFormatter,
-                                 escaped_url.c_str(), escaped_url.c_str()));
+        element, StringPrintf(kNoScriptRedirectFormatter,
+                              escaped_url.c_str(), escaped_url.c_str()));
     rewrite_driver_->PrependChild(element, noscript_node);
     should_insert_noscript_ = false;
   }
@@ -94,7 +97,7 @@ bool SupportNoscriptFilter::IsAnyFilterRequiringScriptExecutionEnabled() const {
         break;
       default:
         break;
-    }
+      }
     if (filter_enabled) {
       return true;
     }

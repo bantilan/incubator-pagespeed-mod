@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 // This module provides a shared memory cache implementation.
 //
 // ----------------------------------------------------------------------------
@@ -121,11 +122,11 @@
 
 #include "pagespeed/kernel/sharedmem/shared_mem_cache.h"
 
-#include <cstddef>  // for size_t
+#include <cstddef>                     // for size_t
 #include <cstring>
 #include <map>
-#include <utility>  // for pair
 #include <vector>
+#include <utility>                      // for pair
 
 #include "base/logging.h"
 #include "pagespeed/kernel/base/abstract_mutex.h"
@@ -133,8 +134,8 @@
 #include "pagespeed/kernel/base/base64_util.h"
 #include "pagespeed/kernel/base/basictypes.h"
 #include "pagespeed/kernel/base/cache_interface.h"
-#include "pagespeed/kernel/base/function.h"
 #include "pagespeed/kernel/base/hasher.h"
+#include "pagespeed/kernel/base/function.h"
 #include "pagespeed/kernel/base/message_handler.h"
 #include "pagespeed/kernel/base/proto_util.h"
 #include "pagespeed/kernel/base/scoped_ptr.h"
@@ -153,11 +154,11 @@ using SharedMemCacheData::BlockNum;
 using SharedMemCacheData::BlockVector;
 using SharedMemCacheData::CacheEntry;
 using SharedMemCacheData::EntryNum;
-using SharedMemCacheData::kHashSize;
-using SharedMemCacheData::kInvalidBlock;
-using SharedMemCacheData::kInvalidEntry;
 using SharedMemCacheData::Sector;
 using SharedMemCacheData::SectorStats;
+using SharedMemCacheData::kInvalidBlock;
+using SharedMemCacheData::kInvalidEntry;
+using SharedMemCacheData::kHashSize;
 
 namespace {
 
@@ -180,17 +181,30 @@ GoogleString FormatSize(size_t size) {
   return Integer64ToString(static_cast<int64>(size));
 }
 
+// A couple of debug helpers.
+#ifndef NDEBUG
+
+GoogleString DebugTextHash(const GoogleString& raw_hash) {
+  GoogleString out;
+  Web64Encode(raw_hash, &out);
+  return out;
+}
+
+GoogleString DebugTextHash(CacheEntry* entry, size_t size) {
+  return DebugTextHash(StringPiece(entry->hash_bytes, size).as_string());
+}
+
+#endif  // NDEBUG
+
 }  // namespace
 
 // If you add any new parameters also include them in SnapshotCacheKey() or else
 // people will restore invalid snapshots and have a corrupt cache.
-template <size_t kBlockSize>
-SharedMemCache<kBlockSize>::SharedMemCache(AbstractSharedMem* shm_runtime,
-                                           const GoogleString& filename,
-                                           Timer* timer, const Hasher* hasher,
-                                           int sectors, int entries_per_sector,
-                                           int blocks_per_sector,
-                                           MessageHandler* handler)
+template<size_t kBlockSize>
+SharedMemCache<kBlockSize>::SharedMemCache(
+    AbstractSharedMem* shm_runtime, const GoogleString& filename,
+    Timer* timer, const Hasher* hasher, int sectors, int entries_per_sector,
+    int blocks_per_sector, MessageHandler* handler)
     : shm_runtime_(shm_runtime),
       hasher_(hasher),
       timer_(timer),
@@ -201,22 +215,24 @@ SharedMemCache<kBlockSize>::SharedMemCache(AbstractSharedMem* shm_runtime,
       checkpoint_interval_sec_(-1),
       handler_(handler),
       snapshot_path_(""),
-      file_cache_(nullptr) {}
-
-template <size_t kBlockSize>
-GoogleString SharedMemCache<kBlockSize>::FormatName() {
-  return absl::StrFormat("SharedMemCache<%d>", static_cast<int>(kBlockSize));
+      file_cache_(NULL) {
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
+GoogleString SharedMemCache<kBlockSize>::FormatName() {
+  return StringPrintf("SharedMemCache<%d>", static_cast<int>(kBlockSize));
+}
+
+template<size_t kBlockSize>
 SharedMemCache<kBlockSize>::~SharedMemCache() {
   STLDeleteElements(&sectors_);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 bool SharedMemCache<kBlockSize>::InitCache(bool parent) {
-  size_t sector_size = Sector<kBlockSize>::RequiredSize(
-      shm_runtime_, entries_per_sector_, blocks_per_sector_);
+  size_t sector_size =
+      Sector<kBlockSize>::RequiredSize(shm_runtime_, entries_per_sector_,
+                                       blocks_per_sector_);
   size_t size = num_sectors_ * sector_size;
 
   if (parent) {
@@ -225,17 +241,18 @@ bool SharedMemCache<kBlockSize>::InitCache(bool parent) {
     segment_.reset(shm_runtime_->AttachToSegment(filename_, size, handler_));
   }
 
-  if (segment_.get() == nullptr) {
-    handler_->Message(kError, "SharedMemCache: can't %s segment %s of size %s",
-                      parent ? "create" : "attach", filename_.c_str(),
-                      FormatSize(size).c_str());
+  if (segment_.get() == NULL) {
+    handler_->Message(
+        kError, "SharedMemCache: can't %s segment %s of size %s",
+        parent ? "create" : "attach",
+        filename_.c_str(), FormatSize(size).c_str());
     return false;
   }
 
   STLDeleteElements(&sectors_);
   sectors_.clear();
   for (int s = 0; s < num_sectors_; ++s) {
-    std::unique_ptr<Sector<kBlockSize> > sec(
+    scoped_ptr<Sector<kBlockSize> > sec(
         new Sector<kBlockSize>(segment_.get(), s * sector_size,
                                entries_per_sector_, blocks_per_sector_));
     bool ok;
@@ -246,26 +263,25 @@ bool SharedMemCache<kBlockSize>::InitCache(bool parent) {
     }
 
     if (!ok) {
-      handler_->Message(kError,
-                        "SharedMemCache: can't %s sector %d of cache %s",
-                        parent ? "create" : "attach", s, filename_.c_str());
+      handler_->Message(
+          kError, "SharedMemCache: can't %s sector %d of cache %s",
+          parent ? "create" : "attach", s, filename_.c_str());
       return false;
     }
     sectors_.push_back(sec.release());
   }
 
   if (parent) {
-    handler_->Message(kInfo,
-                      "SharedMemCache: %s, sectors = %d, entries/sector = %d, "
-                      " %d-byte blocks/sector = %d, total footprint: %s",
-                      filename_.c_str(), num_sectors_, entries_per_sector_,
-                      static_cast<int>(kBlockSize), blocks_per_sector_,
-                      FormatSize(size).c_str());
+    handler_->Message(
+      kInfo, "SharedMemCache: %s, sectors = %d, entries/sector = %d, "
+      " %d-byte blocks/sector = %d, total footprint: %s", filename_.c_str(),
+      num_sectors_, entries_per_sector_, static_cast<int>(kBlockSize),
+      blocks_per_sector_, FormatSize(size).c_str());
   }
   return true;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 bool SharedMemCache<kBlockSize>::Initialize() {
   bool ok = InitCache(true);
   if (ok) {
@@ -274,25 +290,26 @@ bool SharedMemCache<kBlockSize>::Initialize() {
   return ok;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 bool SharedMemCache<kBlockSize>::Attach() {
   return InitCache(false);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::GlobalCleanup(
     AbstractSharedMem* shm_runtime, const GoogleString& filename,
     MessageHandler* message_handler) {
   shm_runtime->DestroySegment(filename, message_handler);
 }
 
-template <size_t kBlockSize>
-void SharedMemCache<kBlockSize>::ComputeDimensions(int64 size_kb,
-                                                   int block_entry_ratio,
-                                                   int sectors,
-                                                   int* entries_per_sector_out,
-                                                   int* blocks_per_sector_out,
-                                                   int64* size_cap_out) {
+template<size_t kBlockSize>
+void SharedMemCache<kBlockSize>::ComputeDimensions(
+    int64 size_kb,
+    int block_entry_ratio,
+    int sectors,
+    int* entries_per_sector_out,
+    int* blocks_per_sector_out,
+    int64* size_cap_out) {
   int64 size = size_kb * 1024;
   const int kEntrySize = sizeof(CacheEntry);
   // Footprint of an entry is kEntrySize bytes. Block is kBlockSize + 4
@@ -316,7 +333,7 @@ void SharedMemCache<kBlockSize>::ComputeDimensions(int64 size_kb,
   *size_cap_out = *blocks_per_sector_out * kBlockSize / 8;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 GoogleString SharedMemCache<kBlockSize>::DumpStats() {
   SectorStats aggregate;
   for (size_t c = 0; c < sectors_.size(); ++c) {
@@ -324,14 +341,13 @@ GoogleString SharedMemCache<kBlockSize>::DumpStats() {
     aggregate.Add(*sectors_[c]->sector_stats());
   }
 
-  return aggregate.Dump(entries_per_sector_ * num_sectors_,
+  return aggregate.Dump(entries_per_sector_* num_sectors_,
                         blocks_per_sector_ * num_sectors_);
 }
 
-template <size_t kBlockSize>
-bool SharedMemCache<kBlockSize>::AddSectorToSnapshot(int sector_num,
-                                                     int64 last_checkpoint_ms,
-                                                     SharedMemCacheDump* dest) {
+template<size_t kBlockSize>
+bool SharedMemCache<kBlockSize>::AddSectorToSnapshot(
+    int sector_num, int64 last_checkpoint_ms, SharedMemCacheDump* dest) {
   CHECK_LE(0, sector_num);
   CHECK_LT(sector_num, num_sectors_);
 
@@ -363,10 +379,10 @@ bool SharedMemCache<kBlockSize>::AddSectorToSnapshot(int sector_num,
 
       size_t total_blocks = blocks.size();
       for (size_t b = 0; b < total_blocks; ++b) {
-        int bytes =
-            sector->BytesInPortion(cur_entry->byte_size, b, total_blocks);
-        dump_entry->mutable_value()->append(sector->BlockBytes(blocks[b]),
-                                            bytes);
+        int bytes = sector->BytesInPortion(cur_entry->byte_size, b,
+                                           total_blocks);
+        dump_entry->mutable_value()->append(
+            sector->BlockBytes(blocks[b]), bytes);
       }
     }
     cur = cur_entry->lru_prev;
@@ -376,7 +392,7 @@ bool SharedMemCache<kBlockSize>::AddSectorToSnapshot(int sector_num,
   return true;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::RestoreSnapshot(
     const SharedMemCacheDump& dump) {
   for (int i = 0; i < dump.entry_size(); ++i) {
@@ -394,22 +410,23 @@ void SharedMemCache<kBlockSize>::RestoreSnapshot(
   }
 }
 
-template <size_t kBlockSize>
-void SharedMemCache<kBlockSize>::MarshalSnapshot(const SharedMemCacheDump& dump,
-                                                 GoogleString* out) {
+template<size_t kBlockSize>
+void SharedMemCache<kBlockSize>::MarshalSnapshot(
+    const SharedMemCacheDump& dump, GoogleString* out) {
   out->clear();
   StringOutputStream sstream(out);  // finalizes *out in destructor
   dump.SerializeToZeroCopyStream(&sstream);
 }
 
-template <size_t kBlockSize>
-void SharedMemCache<kBlockSize>::DemarshalSnapshot(const StringPiece& marshaled,
-                                                   SharedMemCacheDump* out) {
+
+template<size_t kBlockSize>
+void SharedMemCache<kBlockSize>::DemarshalSnapshot(
+    const StringPiece& marshaled, SharedMemCacheDump* out) {
   ArrayInputStream input(marshaled.data(), marshaled.size());
   out->ParseFromZeroCopyStream(&input);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::Put(const GoogleString& key,
                                      const SharedString& value) {
   int64 now_ms = timer_->NowMs();
@@ -417,8 +434,8 @@ void SharedMemCache<kBlockSize>::Put(const GoogleString& key,
   PutRawHash(raw_hash, now_ms, value, true /* may trigger checkpointing */);
 }
 
-template <size_t kBlockSize>
-void SharedMemCache<kBlockSize>::ScheduleSnapshotIfNecessary(
+template<size_t kBlockSize>
+void SharedMemCache<kBlockSize>:: ScheduleSnapshotIfNecessary(
     bool checkpoint_ok, int64 last_use_timestamp_ms, int64 last_checkpoint_ms,
     int sector_num) {
   if (checkpoint_ok /* not restoring, ok to checkpoint */ &&
@@ -432,7 +449,7 @@ void SharedMemCache<kBlockSize>::ScheduleSnapshotIfNecessary(
   }
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::PutRawHash(const GoogleString& raw_hash,
                                             int64 last_use_timestamp_ms,
                                             const SharedString& value,
@@ -443,8 +460,9 @@ void SharedMemCache<kBlockSize>::PutRawHash(const GoogleString& raw_hash,
   size_t value_size = static_cast<size_t>(value.size());
   if (value_size > kMaxSize) {
     handler_->Message(
-        kInfo, "Unable to insert object of size: %s, cache limit is: %s",
-        FormatSize(value.size()).c_str(), FormatSize(kMaxSize).c_str());
+      kInfo, "Unable to insert object of size: %s, cache limit is: %s",
+      FormatSize(value.size()).c_str(),
+      FormatSize(kMaxSize).c_str());
     return;
   }
 
@@ -484,7 +502,7 @@ void SharedMemCache<kBlockSize>::PutRawHash(const GoogleString& raw_hash,
   // something  unrelated. In this case, we even give up if there are only
   // readers, as it's unclear that they are any less important than us.
   EntryNum best_key = kInvalidEntry;
-  CacheEntry* best = nullptr;
+  CacheEntry* best = NULL;
   for (int p = 0; p < kAssociativity; ++p) {
     EntryNum cand_key = pos.keys[p];
     CacheEntry* cand = sector->EntryAt(cand_key);
@@ -517,11 +535,11 @@ void SharedMemCache<kBlockSize>::PutRawHash(const GoogleString& raw_hash,
                               last_checkpoint_ms, pos.sector);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 class SharedMemCache<kBlockSize>::WriteOutSnapshotFunction : public Function {
  public:
-  WriteOutSnapshotFunction(SharedMemCache<kBlockSize>* cache, int sector_num,
-                           int64 last_checkpoint_ms)
+  WriteOutSnapshotFunction(SharedMemCache<kBlockSize>* cache,
+                           int sector_num, int64 last_checkpoint_ms)
       : cache_(cache),
         sector_num_(sector_num),
         last_checkpoint_ms_(last_checkpoint_ms) {}
@@ -537,15 +555,15 @@ class SharedMemCache<kBlockSize>::WriteOutSnapshotFunction : public Function {
   DISALLOW_COPY_AND_ASSIGN(WriteOutSnapshotFunction);
 };
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::ScheduleSnapshot(int sector_num,
                                                   int64 last_checkpoint_ms) {
   // We're being called from whatever thread called Put() but snapshotting can
   // take a while so we need to move to the slow worker thread.  We use whatever
   // worker the file cache uses.
-  CHECK(file_cache_ != nullptr);
+  CHECK(file_cache_ != NULL);
   SlowWorker* worker = file_cache_->worker();
-  CHECK(worker != nullptr);
+  CHECK(worker != NULL);
   worker->Start();
   worker->RunIfNotBusy(
       new WriteOutSnapshotFunction(this, sector_num, last_checkpoint_ms));
@@ -553,20 +571,21 @@ void SharedMemCache<kBlockSize>::ScheduleSnapshot(int sector_num,
   // try again after the next Put() for this sector.
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 GoogleString SharedMemCache<kBlockSize>::SnapshotCacheKey(
     int sector_num) const {
   // Important: everything that determines whether it is legitimate to restore a
   // shared memory cache needs to be included in the key here.
-  return StrCat(
-      "shm_metadata_cache/snapshot/", filename_, "/",
-      IntegerToString(kSnapshotVersion), "/",
-      StrCat(IntegerToString(kBlockSize), "/",
-             IntegerToString(blocks_per_sector_), "/",
-             IntegerToString(num_sectors_), "/", IntegerToString(sector_num)));
+  return StrCat("shm_metadata_cache/snapshot/",
+                filename_, "/",
+                IntegerToString(kSnapshotVersion), "/",
+                StrCat(IntegerToString(kBlockSize), "/",
+                       IntegerToString(blocks_per_sector_), "/",
+                       IntegerToString(num_sectors_), "/",
+                       IntegerToString(sector_num)));
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::WriteOutSnapshotFromWorkerThread(
     int sector_num, int64 last_checkpoint_ms) {
   SharedMemCacheDump snapshot;
@@ -578,15 +597,15 @@ void SharedMemCache<kBlockSize>::WriteOutSnapshotFromWorkerThread(
   MarshalSnapshot(snapshot, &snapshot_s);
   SharedString snapshot_s_shared(snapshot_s);
 
-  CHECK(file_cache_ != nullptr);
+  CHECK(file_cache_ != NULL);
   // It's safe for us to use the file cache from an arbitrary thread because
   // the file cache is thread-agnostic, having no writable member variables.
   file_cache_->Put(SnapshotCacheKey(sector_num), snapshot_s_shared);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::RestoreFromDisk() {
-  if (file_cache_ == nullptr) {
+  if (file_cache_ == NULL) {
     // RegisterSnapshotFileCache was never called, which should only happen in
     // test code.
     handler_->Message(
@@ -614,11 +633,10 @@ void SharedMemCache<kBlockSize>::RestoreFromDisk() {
 }
 
 // Expects sector->mutex() held on entry, leaves it held on exit.
-template <size_t kBlockSize>
-void SharedMemCache<kBlockSize>::PutIntoEntry(Sector<kBlockSize>* sector,
-                                              EntryNum entry_num,
-                                              int64 last_use_timestamp_ms,
-                                              const SharedString& value) {
+template<size_t kBlockSize>
+void SharedMemCache<kBlockSize>::PutIntoEntry(
+    Sector<kBlockSize>* sector, EntryNum entry_num,
+    int64 last_use_timestamp_ms, const SharedString& value) {
   const char* data = value.data();
 
   CacheEntry* entry = sector->EntryAt(entry_num);
@@ -680,7 +698,7 @@ void SharedMemCache<kBlockSize>::PutIntoEntry(Sector<kBlockSize>* sector,
   entry->creating = false;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::Get(const GoogleString& key,
                                      Callback* callback) {
   GoogleString raw_hash = ToRawHash(key);
@@ -708,9 +726,11 @@ void SharedMemCache<kBlockSize>::Get(const GoogleString& key,
 }
 
 // Expects sector->mutex() held on entry, leaves it held on exit.
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 CacheInterface::KeyState SharedMemCache<kBlockSize>::GetFromEntry(
-    const GoogleString& key, Sector<kBlockSize>* sector, EntryNum entry_num,
+    const GoogleString& key,
+    Sector<kBlockSize>* sector,
+    EntryNum entry_num,
     Callback* callback) {
   CacheEntry* entry = sector->EntryAt(entry_num);
   if (entry->creating) {
@@ -748,7 +768,7 @@ CacheInterface::KeyState SharedMemCache<kBlockSize>::GetFromEntry(
   return kAvailable;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::Delete(const GoogleString& key) {
   GoogleString raw_hash = ToRawHash(key);
   Position pos;
@@ -767,7 +787,7 @@ void SharedMemCache<kBlockSize>::Delete(const GoogleString& key) {
 }
 
 // Called with lock held.
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::DeleteEntry(Sector<kBlockSize>* sector,
                                              EntryNum entry_num) {
   CacheEntry* entry = sector->EntryAt(entry_num);
@@ -785,7 +805,7 @@ void SharedMemCache<kBlockSize>::DeleteEntry(Sector<kBlockSize>* sector,
   MarkEntryFree(sector, entry_num);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::SanityCheck() {
   for (int i = 0; i < num_sectors_; ++i) {
     Sector<kBlockSize>* sector = sectors_[i];
@@ -820,7 +840,7 @@ void SharedMemCache<kBlockSize>::SanityCheck() {
   }
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::RegisterSnapshotFileCache(
     FileCache* potential_file_cache, int checkpoint_interval_sec) {
   if (snapshot_path_ == filename_) {
@@ -846,10 +866,9 @@ void SharedMemCache<kBlockSize>::RegisterSnapshotFileCache(
   }
 }
 
-template <size_t kBlockSize>
-bool SharedMemCache<kBlockSize>::TryAllocateBlocks(Sector<kBlockSize>* sector,
-                                                   int goal,
-                                                   BlockVector* blocks) {
+template<size_t kBlockSize>
+bool SharedMemCache<kBlockSize>::TryAllocateBlocks(
+    Sector<kBlockSize>* sector, int goal, BlockVector* blocks) {
   // See how much we have in freelist.
   int got = sector->AllocBlocksFromFreeList(goal, blocks);
 
@@ -869,7 +888,7 @@ bool SharedMemCache<kBlockSize>::TryAllocateBlocks(Sector<kBlockSize>* sector,
   return (got >= goal);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::MarkEntryFree(Sector<kBlockSize>* sector,
                                                EntryNum entry_num) {
   sector->UnlinkEntryFromLRU(entry_num);
@@ -881,7 +900,7 @@ void SharedMemCache<kBlockSize>::MarkEntryFree(Sector<kBlockSize>* sector,
   entry->first_block = kInvalidBlock;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::TouchEntry(Sector<kBlockSize>* sector,
                                             int64 last_use_timestamp_ms,
                                             EntryNum entry_num) {
@@ -891,19 +910,19 @@ void SharedMemCache<kBlockSize>::TouchEntry(Sector<kBlockSize>* sector,
   entry->last_use_timestamp_ms = last_use_timestamp_ms;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 bool SharedMemCache<kBlockSize>::Writeable(const CacheEntry* entry) {
   return (entry->open_count == 0) && !entry->creating;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 bool SharedMemCache<kBlockSize>::KeyMatch(CacheEntry* entry,
                                           const GoogleString& raw_hash) {
   DCHECK_EQ(kHashSize, raw_hash.size());
   return 0 == std::memcmp(entry->hash_bytes, raw_hash.data(), kHashSize);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 GoogleString SharedMemCache<kBlockSize>::ToRawHash(const GoogleString& key) {
   GoogleString raw_hash = hasher_->RawHash(key);
   DCHECK(raw_hash.size() >= kHashSize);
@@ -918,7 +937,7 @@ GoogleString SharedMemCache<kBlockSize>::ToRawHash(const GoogleString& key) {
   return raw_hash;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::ExtractPosition(
     const GoogleString& raw_hash,
     SharedMemCache<kBlockSize>::Position* out_pos) {
@@ -952,7 +971,7 @@ void SharedMemCache<kBlockSize>::ExtractPosition(
   out_pos->keys[3] = static_cast<EntryNum>(key3 % entries_per_sector_);
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::EnsureReadyForWriting(
     Sector<kBlockSize>* sector, CacheEntry* entry) {
   // It is possible that as we are starting to write, some other processes
@@ -974,7 +993,7 @@ void SharedMemCache<kBlockSize>::EnsureReadyForWriting(
   }
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 int64 SharedMemCache<kBlockSize>::GetLastWriteMsForTesting(int sector_num) {
   Sector<kBlockSize>* sector = sectors_[sector_num];
   SectorStats* stats = sector->sector_stats();
@@ -984,7 +1003,7 @@ int64 SharedMemCache<kBlockSize>::GetLastWriteMsForTesting(int sector_num) {
   return last_checkpoint_ms;
 }
 
-template <size_t kBlockSize>
+template<size_t kBlockSize>
 void SharedMemCache<kBlockSize>::SetLastWriteMsForTesting(
     int sector_num, int64 last_checkpoint_ms) {
   Sector<kBlockSize>* sector = sectors_[sector_num];
@@ -994,8 +1013,8 @@ void SharedMemCache<kBlockSize>::SetLastWriteMsForTesting(
   sector->mutex()->Unlock();
 }
 
-template class SharedMemCache<64>;    // metadata ("rname") cache
-template class SharedMemCache<512>;   // testing
+template class SharedMemCache<64>;  // metadata ("rname") cache
+template class SharedMemCache<512>;  // testing
 template class SharedMemCache<4096>;  // HTTP cache
 
 }  // namespace net_instaweb

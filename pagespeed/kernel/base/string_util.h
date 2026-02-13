@@ -17,100 +17,50 @@
  * under the License.
  */
 
+
 #ifndef PAGESPEED_KERNEL_BASE_STRING_UTIL_H_
 #define PAGESPEED_KERNEL_BASE_STRING_UTIL_H_
 
-#include <cctype>  // for isascii
+#include <cctype>                      // for isascii
 #include <cstddef>
-#include <cstdlib>  // NOLINT
-#include <iostream>
 #include <map>
 #include <set>
-#include <string>  // NOLINT
 #include <vector>
 
-#include "absl/strings/internal/memutil.h"  // StripAsciiWhitespace
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "base/logging.h"
 #include "pagespeed/kernel/base/basictypes.h"
 #include "pagespeed/kernel/base/string.h"
 
-static const int32 kint32max = 0x7FFFFFFF;
-static const int32 kint32min = -kint32max - 1;
 
-using absl::StrAppend;
-using absl::StrCat;
+#include <cstdlib>  // NOLINT
+#include <string>  // NOLINT
+#include "base/strings/string_number_conversions.h"
+#include "base/strings/string_piece.h"
+#include "base/strings/string_util.h"
+#include "base/strings/stringprintf.h"
 
-class StringPiece : public absl::string_view {
- public:
-  // We accept nullptr for historical reasons.
-  StringPiece(const char* c) : absl::string_view(absl::NullSafeStringView(c)) {}
-  StringPiece(const absl::string_view& s) : absl::string_view(s) {}
-  StringPiece(const GoogleString& s) : absl::string_view(s.data(), s.size()) {}
+using base::StringAppendF;
+using base::StringAppendV;
+using base::SStringPrintf;
+using base::StringPiece;
+using base::StringPrintf;
 
-  using absl::string_view::string_view;
-
-  // We accept nullptr for historical reasons.
-  constexpr bool operator==(const char* rhs) const noexcept {
-    return absl::NullSafeStringView(rhs) == *this;
-  }
-
-  // We accept nullptr for historical reasons.
-  constexpr bool operator!=(const char* rhs) const noexcept {
-    return absl::NullSafeStringView(rhs) != *this;
-  }
-
-  void CopyToString(GoogleString* dest) const { *dest = std::string(*this); }
-
-  void AppendToString(GoogleString* dest) const {
-    (*dest).append(this->data(), this->size());
-  }
-
-  GoogleString as_string() const {
-    return empty() ? std::string() : std::string(*this);
-  }
-
-  bool starts_with(StringPiece prefix) const {
-    return absl::StartsWith(*this, prefix);
-  }
-
-  bool ends_with(StringPiece postfix) const {
-    return absl::EndsWith(*this, postfix);
-  }
-
-  void set(StringPiece newvalue, uint32_t size) {
-    StringPiece tmp(newvalue.data(), size);
-    *this = tmp;
-  }
-
-  StringPiece substr(uint32_t from, uint32_t to) const {
-    return StringPiece(absl::string_view::substr(from, to));
-  }
-  StringPiece substr(uint32_t from) const {
-    return StringPiece(absl::string_view::substr(from));
-  }
-};
-
-void StringAppendV(std::string* dst, const char* format, va_list ap);
-
-// XXX(oschaaf): check(!!)
-typedef size_t stringpiece_ssize_type;
+typedef StringPiece::size_type stringpiece_ssize_type;
 
 namespace strings {
-using absl::EndsWith;
-using absl::StartsWith;
-}  // namespace strings
+inline bool StartsWith(StringPiece a, StringPiece b) {
+  return a.starts_with(b);
+}
+inline bool EndsWith(StringPiece a, StringPiece b) {
+  return a.ends_with(b);
+}
+}
+
 
 // Quick macro to get the size of a static char[] without trailing '\0'.
 // Note: Cannot be used for char*, std::string, etc.
-
-#ifndef STATIC_STRLEN
 #define STATIC_STRLEN(static_string) (arraysize(static_string) - 1)
-#endif
+
 namespace net_instaweb {
 
 struct StringCompareInsensitive;
@@ -125,43 +75,40 @@ typedef std::vector<const GoogleString*> ConstStringStarVector;
 typedef std::vector<GoogleString*> StringStarVector;
 typedef std::vector<const char*> CharStarVector;
 
-inline GoogleString IntegerToString(const int i) { return absl::StrCat(i); }
-
-inline GoogleString UintToString(const unsigned int i) {
-  return absl::StrCat(i);
+inline GoogleString IntegerToString(int i) {
+  return base::IntToString(i);
 }
 
-inline GoogleString Integer64ToString(const int64 i) { return absl::StrCat(i); }
+inline GoogleString UintToString(unsigned int i) {
+  return base::UintToString(i);
+}
 
-inline GoogleString PointerToString(const void* pointer) {
-  return absl::StrFormat("%p", pointer);
+inline GoogleString Integer64ToString(int64 i) {
+  return base::Int64ToString(i);
+}
+
+inline GoogleString PointerToString(void* pointer) {
+  return StringPrintf("%p", pointer);
 }
 
 // NOTE: For a string of the form "45x", this sets *out = 45 but returns false.
 // It sets *out = 0 given "Junk45" or "".
-inline bool StringToInt(StringPiece in, int* out) {
-  return absl::SimpleAtoi<int>(in, out);
-}
-
 inline bool StringToInt(const char* in, int* out) {
-  return absl::SimpleAtoi<int>(in, out);
+  return base::StringToInt(in, out);
 }
 
 inline bool StringToInt64(const char* in, int64* out) {
-  return absl::SimpleAtoi<int64>(StringPiece(in), out);
-}
-
-inline bool StringToInt64(StringPiece in, int64* out) {
-  return absl::SimpleAtoi<int64>(in, out);
+  return base::StringToInt64(in, out);
 }
 
 inline bool StringToInt(const GoogleString& in, int* out) {
-  return absl::SimpleAtoi<int>(in, out);
+  return base::StringToInt(in, out);
 }
 
 inline bool StringToInt64(const GoogleString& in, int64* out) {
-  return absl::SimpleAtoi<int64>(in, out);
+  return base::StringToInt64(in, out);
 }
+
 
 // Parses valid floating point number and returns true if string contains only
 // that floating point number (ignoring leading/trailing whitespace).
@@ -178,13 +125,352 @@ inline bool StringToDouble(GoogleString in, double* out) {
 }
 
 inline bool StringToDouble(StringPiece in, double* out) {
-  return StringToDouble(GoogleString(in), out);
+  return StringToDouble(in.as_string(), out);
 }
 
 // Returns the part of the piece after the first '=', trimming any
 // white space found at the beginning or end of the resulting piece.
 // Returns an empty string if '=' was not found.
 StringPiece PieceAfterEquals(StringPiece piece);
+
+
+GoogleString StrCat(StringPiece a, StringPiece b);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s, StringPiece t);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s, StringPiece t,
+                    StringPiece u);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s, StringPiece t,
+                    StringPiece u, StringPiece v);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s, StringPiece t,
+                    StringPiece u, StringPiece v, StringPiece w);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s, StringPiece t,
+                    StringPiece u, StringPiece v, StringPiece w, StringPiece x);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s, StringPiece t,
+                    StringPiece u, StringPiece v, StringPiece w, StringPiece x,
+                    StringPiece y);
+GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c, StringPiece d,
+                    StringPiece e, StringPiece f, StringPiece g, StringPiece h,
+                    StringPiece i, StringPiece j, StringPiece k, StringPiece l,
+                    StringPiece m, StringPiece n, StringPiece o, StringPiece p,
+                    StringPiece q, StringPiece r, StringPiece s, StringPiece t,
+                    StringPiece u, StringPiece v, StringPiece w, StringPiece x,
+                    StringPiece y, StringPiece z);
+
+namespace internal {
+
+// Do not call directly - this is not part of the public API.
+GoogleString StrCatNineOrMore(const StringPiece* a1, ...);
+
+}  // namescape internal
+
+// Supports 9 or more arguments
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r,
+                           StringPiece s) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r,
+                           StringPiece s, StringPiece t) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s, &t,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r,
+                           StringPiece s, StringPiece t, StringPiece u) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s, &t, &u,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r,
+                           StringPiece s, StringPiece t, StringPiece u,
+                           StringPiece v) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s, &t, &u, &v,
+                                    null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r,
+                           StringPiece s, StringPiece t, StringPiece u,
+                           StringPiece v, StringPiece w) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s, &t, &u, &v,
+                                    &w, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r,
+                           StringPiece s, StringPiece t, StringPiece u,
+                           StringPiece v, StringPiece w, StringPiece x) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s, &t, &u, &v,
+                                    &w, &x, null_stringpiece);
+}
+
+inline GoogleString StrCat(
+    StringPiece a, StringPiece b, StringPiece c, StringPiece d, StringPiece e,
+    StringPiece f, StringPiece g, StringPiece h, StringPiece i, StringPiece j,
+    StringPiece k, StringPiece l, StringPiece m, StringPiece n, StringPiece o,
+    StringPiece p, StringPiece q, StringPiece r, StringPiece s, StringPiece t,
+    StringPiece u, StringPiece v, StringPiece w, StringPiece x, StringPiece y) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s, &t, &u, &v,
+                                    &w, &x, &y, null_stringpiece);
+}
+
+inline GoogleString StrCat(StringPiece a, StringPiece b, StringPiece c,
+                           StringPiece d, StringPiece e, StringPiece f,
+                           StringPiece g, StringPiece h, StringPiece i,
+                           StringPiece j, StringPiece k, StringPiece l,
+                           StringPiece m, StringPiece n, StringPiece o,
+                           StringPiece p, StringPiece q, StringPiece r,
+                           StringPiece s, StringPiece t, StringPiece u,
+                           StringPiece v, StringPiece w, StringPiece x,
+                           StringPiece y, StringPiece z) {
+  const StringPiece* null_stringpiece = NULL;
+  return internal::StrCatNineOrMore(&a, &b, &c, &d, &e, &f, &g, &h, &i, &j, &k,
+                                    &l, &m, &n, &o, &p, &q, &r, &s, &t, &u, &v,
+                                    &w, &x, &y, &z, null_stringpiece);
+}
+
+inline void StrAppend(GoogleString* target, StringPiece a) {
+  a.AppendToString(target);
+}
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b);
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b,
+               StringPiece c);
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b,
+               StringPiece c, StringPiece d);
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b,
+               StringPiece c, StringPiece d, StringPiece e);
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b,
+               StringPiece c, StringPiece d, StringPiece e, StringPiece f);
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b,
+               StringPiece c, StringPiece d, StringPiece e, StringPiece f,
+               StringPiece g);
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b,
+               StringPiece c, StringPiece d, StringPiece e, StringPiece f,
+               StringPiece g, StringPiece h);
+void StrAppend(GoogleString* target, StringPiece a, StringPiece b,
+               StringPiece c, StringPiece d, StringPiece e, StringPiece f,
+               StringPiece g, StringPiece h, StringPiece i);
 
 // Split sp into pieces that are separated by any character in the given string
 // of separators, and push those pieces in order onto components.
@@ -213,7 +499,7 @@ void UpperString(GoogleString* str);
 void LowerString(GoogleString* str);
 
 inline bool OnlyWhitespace(const GoogleString& str) {
-  return absl::StripAsciiWhitespace(str).empty();
+  return ContainsOnlyWhitespaceASCII(str);
 }
 
 // Replaces all instances of 'substring' in 's' with 'replacement'.
@@ -226,7 +512,8 @@ int GlobalReplaceSubstring(StringPiece substring, StringPiece replacement,
 
 // Returns the index of the start of needle in haystack, or
 // StringPiece::npos if it's not present.
-StringPiece::size_type FindIgnoreCase(StringPiece haystack, StringPiece needle);
+stringpiece_ssize_type FindIgnoreCase(StringPiece haystack, StringPiece needle);
+
 
 // Erase shortest substrings in string bracketed by left and right, working
 // from the left.
@@ -241,7 +528,7 @@ int GlobalEraseBracketedSubstring(StringPiece left, StringPiece right,
 GoogleString JoinStringStar(const ConstStringStarVector& vector,
                             StringPiece delim);
 
-// See also: ./src/third_party/css_parser/src/third_party/css_parser/src/strings/ascii_ctype.h
+// See also: ./src/third_party/css_parser/src/strings/ascii_ctype.h
 // We probably don't want our core string header file to have a
 // dependecy on the Google CSS parser, so for now we'll write this here:
 
@@ -272,9 +559,9 @@ inline char IsHtmlSpace(char c) {
   return (c == ' ') || (c == '\t') || (c == '\r') || (c == '\n') || (c == '\f');
 }
 
-/* inline char* strdup(const char* str) {
-  return absl::strdup(str);
-}*/
+inline char* strdup(const char* str) {
+  return base::strdup(str);
+}
 
 // Case-insensitive string comparison that is locale-independent.
 int StringCaseCompare(StringPiece s1, StringPiece s2);
@@ -283,17 +570,21 @@ int StringCaseCompare(StringPiece s1, StringPiece s2);
 // is preferable to isalnum() for working with computer languages, as
 // opposed to human languages.
 inline bool IsAsciiAlphaNumeric(char ch) {
-  return (((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z')) ||
+  return (((ch >= 'a') && (ch <= 'z')) ||
+          ((ch >= 'A') && (ch <= 'Z')) ||
           ((ch >= '0') && (ch <= '9')));
 }
 
 // Convenience functions.
 inline bool IsHexDigit(char c) {
-  return ('0' <= c && c <= '9') || ('A' <= c && c <= 'F') ||
+  return ('0' <= c && c <= '9') ||
+         ('A' <= c && c <= 'F') ||
          ('a' <= c && c <= 'f');
 }
 
-inline bool IsDecimalDigit(char c) { return (c >= '0' && c <= '9'); }
+inline bool IsDecimalDigit(char c) {
+  return (c >= '0' && c <= '9');
+}
 
 // In-place removal of leading and trailing HTML whitespace.  Returns true if
 // any whitespace was trimmed.
@@ -321,7 +612,7 @@ inline void TrimWhitespace(StringPiece in, GoogleString* output) {
       << "Illegal argument aliasing in TrimWhitespace";
   StringPiece temp(in);   // Mutable copy
   TrimWhitespace(&temp);  // Modifies temp
-  *output = GoogleString(temp);
+  temp.CopyToString(output);
 }
 
 // Accumulates a decimal value from 'c' into *value.
@@ -380,7 +671,9 @@ bool SplitStringPieceToIntegerVector(StringPiece src, StringPiece separators,
                                      std::vector<int>* ints);
 
 // Does a path end in slash?
-inline bool EndsInSlash(StringPiece path) { return absl::EndsWith(path, "/"); }
+inline bool EndsInSlash(StringPiece path) {
+  return strings::EndsWith(path, "/");
+}
 
 // Make sure directory's path ends in '/'.
 inline void EnsureEndsInSlash(GoogleString* dir) {
@@ -408,8 +701,9 @@ inline GoogleString* StringVectorAdd(StringVector* v) {
 }
 
 // Append string-like objects accessed through an iterator.
-template <typename I>
-void AppendJoinIterator(GoogleString* dest, I start, I end, StringPiece sep) {
+template<typename I>
+void AppendJoinIterator(
+    GoogleString* dest, I start, I end, StringPiece sep) {
   if (start == end) {
     // Skip a lot of set-up and tear-down in empty case.
     return;
@@ -432,13 +726,13 @@ void AppendJoinIterator(GoogleString* dest, I start, I end, StringPiece sep) {
 // StringVector, or StringPieceVector, separated by a given separator, with
 // given initial and final strings.  Argument order chosen to be consistent
 // with StrAppend.
-template <typename C>
-void AppendJoinCollection(GoogleString* dest, const C& collection,
-                          StringPiece sep) {
+template<typename C>
+void AppendJoinCollection(
+    GoogleString* dest, const C& collection, StringPiece sep) {
   AppendJoinIterator(dest, collection.begin(), collection.end(), sep);
 }
 
-template <typename C>
+template<typename C>
 GoogleString JoinCollection(const C& collection, StringPiece sep) {
   GoogleString result;
   AppendJoinCollection(&result, collection, sep);
@@ -446,14 +740,21 @@ GoogleString JoinCollection(const C& collection, StringPiece sep) {
 }
 
 // Converts a boolean to string.
-inline const char* BoolToString(bool b) { return (b ? "true" : "false"); }
+inline const char* BoolToString(bool b) {
+  return (b ? "true" : "false");
+}
 
 // Using isascii with signed chars is unfortunately undefined.
-inline bool IsAscii(char c) { return isascii(static_cast<unsigned char>(c)); }
+inline bool IsAscii(char c) {
+  return isascii(static_cast<unsigned char>(c));
+}
 
 // Tests if c is a standard (non-control) ASCII char 0x20-0x7E.
 // Note: This does not include TAB (0x09), LF (0x0A) or CR (0x0D).
-inline bool IsNonControlAscii(char c) { return ('\x20' <= c) && (c <= '\x7E'); }
+inline bool IsNonControlAscii(char c) {
+  return ('\x20' <= c) && (c <= '\x7E');
+}
+
 
 }  // namespace net_instaweb
 

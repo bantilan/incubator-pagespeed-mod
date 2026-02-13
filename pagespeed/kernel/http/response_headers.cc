@@ -17,18 +17,20 @@
  * under the License.
  */
 
+
+
 #include "pagespeed/kernel/http/response_headers.h"
 
-#include <algorithm>  // for min
+#include <algorithm>                    // for min
 #include <cstddef>
-#include <cstdio>  // for fprintf, stderr, snprintf
+#include <cstdio>     // for fprintf, stderr, snprintf
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "base/logging.h"
-////#include "strings/stringpiece_utils.h"
+#include "strings/stringpiece_utils.h"
 #include "pagespeed/kernel/base/basictypes.h"
 #include "pagespeed/kernel/base/escaping.h"
 #include "pagespeed/kernel/base/string.h"
@@ -67,7 +69,9 @@ ResponseHeaders& ResponseHeaders::operator=(const ResponseHeaders& other) {
   return *this;
 }
 
-ResponseHeaders::~ResponseHeaders() { Clear(); }
+ResponseHeaders::~ResponseHeaders() {
+  Clear();
+}
 
 void ResponseHeaders::Init(const HttpOptions& http_options) {
   http_options_ = http_options;
@@ -94,9 +98,9 @@ void ApplyTimeDelta(const char* attr, int64 delta_ms,
 
 }  // namespace
 
-bool ResponseHeaders::IsImminentlyExpiring(int64 start_date_ms, int64 expire_ms,
-                                           int64 now_ms,
-                                           const HttpOptions& http_options) {
+bool ResponseHeaders::IsImminentlyExpiring(
+    int64 start_date_ms, int64 expire_ms, int64 now_ms,
+    const HttpOptions& http_options) {
   // Consider a resource with 5 minute expiration time (the default
   // assumed by mod_pagespeed when a potentialy cacheable resource
   // lacks a cache control header, which happens a lot).  If the
@@ -119,9 +123,9 @@ bool ResponseHeaders::IsImminentlyExpiring(int64 start_date_ms, int64 expire_ms,
   if (ttl_ms < http_options.implicit_cache_ttl_ms) {
     return false;
   }
-  int64 freshen_threshold =
-      std::min(http_options.implicit_cache_ttl_ms,
-               ((100 - kRefreshExpirePercent) * ttl_ms) / 100);
+  int64 freshen_threshold = std::min(
+      http_options.implicit_cache_ttl_ms,
+      ((100 - kRefreshExpirePercent) * ttl_ms) / 100);
   return (expire_ms - now_ms < freshen_threshold);
 }
 
@@ -224,7 +228,9 @@ void ResponseHeaders::Clear() {
   // Those should only be set at construction time and never mutated.
 }
 
-int ResponseHeaders::status_code() const { return proto()->status_code(); }
+int ResponseHeaders::status_code() const {
+  return proto()->status_code();
+}
 
 void ResponseHeaders::set_status_code(int code) {
   cache_fields_dirty_ = true;
@@ -236,8 +242,9 @@ bool ResponseHeaders::has_status_code() const {
 }
 
 const char* ResponseHeaders::reason_phrase() const {
-  return proto()->has_reason_phrase() ? proto()->reason_phrase().c_str()
-                                      : "(null)";
+  return proto()->has_reason_phrase()
+      ? proto()->reason_phrase().c_str()
+      : "(null)";
 }
 
 void ResponseHeaders::set_reason_phrase(const StringPiece& reason_phrase) {
@@ -258,16 +265,20 @@ int64 ResponseHeaders::last_modified_time_ms() const {
 }
 
 int64 ResponseHeaders::date_ms() const {
-  DCHECK(!cache_fields_dirty_) << "Call ComputeCaching() before date_ms()";
+  DCHECK(!cache_fields_dirty_)
+      << "Call ComputeCaching() before date_ms()";
   return proto()->date_ms();
 }
 
 int64 ResponseHeaders::cache_ttl_ms() const {
-  DCHECK(!cache_fields_dirty_) << "Call ComputeCaching() before cache_ttl_ms()";
+  DCHECK(!cache_fields_dirty_)
+      << "Call ComputeCaching() before cache_ttl_ms()";
   return proto()->cache_ttl_ms();
 }
 
-bool ResponseHeaders::has_date_ms() const { return proto()->has_date_ms(); }
+bool ResponseHeaders::has_date_ms() const {
+  return proto()->has_date_ms();
+}
 
 bool ResponseHeaders::is_implicitly_cacheable() const {
   DCHECK(!cache_fields_dirty_)
@@ -305,9 +316,11 @@ bool ResponseHeaders::CombineContentTypes(const StringPiece& orig,
       if (mime_type.empty()) {
         mime_type = fresh_mime_type;
       }
-      GoogleString full_type =
-          absl::StrFormat("%s;%s%s", mime_type.c_str(),
-                          charset.empty() ? "" : " charset=", charset.c_str());
+      GoogleString full_type = StringPrintf(
+          "%s;%s%s",
+          mime_type.c_str(),
+          charset.empty()? "" : " charset=",
+          charset.c_str());
       Replace(HttpAttributes::kContentType, full_type);
       ret = true;
     }
@@ -370,12 +383,12 @@ bool ResponseHeaders::ReadFromBinary(const StringPiece& buf,
 }
 
 // Serialize meta-data to a binary stream.
-bool ResponseHeaders::WriteAsHttp(Writer* writer,
-                                  MessageHandler* handler) const {
+bool ResponseHeaders::WriteAsHttp(Writer* writer, MessageHandler* handler)
+    const {
   bool ret = true;
   char buf[100];
-  snprintf(buf, sizeof(buf), "HTTP/%d.%d %d ", major_version(), minor_version(),
-           status_code());
+  snprintf(buf, sizeof(buf), "HTTP/%d.%d %d ",
+           major_version(), minor_version(), status_code());
   ret &= writer->Write(buf, handler);
   ret &= writer->Write(reason_phrase(), handler);
   ret &= writer->Write("\r\n", handler);
@@ -407,7 +420,8 @@ bool ResponseHeaders::RequiresProxyRevalidation() const {
 }
 
 bool ResponseHeaders::IsProxyCacheable(
-    RequestHeaders::Properties req_properties, VaryOption respect_vary,
+    RequestHeaders::Properties req_properties,
+    VaryOption respect_vary,
     ValidatorOption has_request_validator) const {
   DCHECK(!cache_fields_dirty_)
       << "Call ComputeCaching() before IsProxyCacheable()";
@@ -482,7 +496,8 @@ void ResponseHeaders::SetCacheControlPublic() {
   if (Lookup(HttpAttributes::kCacheControl, &values)) {
     for (int i = 0, n = values.size(); i < n; ++i) {
       StringPiece val = *(values[i]);
-      if (StringCaseEqual(val, "private") || StringCaseEqual(val, "public") ||
+      if (StringCaseEqual(val, "private") ||
+          StringCaseEqual(val, "public") ||
           StringCaseEqual(val, "no-cache") ||
           StringCaseEqual(val, "no-store")) {
         return;
@@ -559,9 +574,8 @@ bool ResponseHeaders::Sanitize() {
   // store in a cache.
   const StringPieceVector& names_to_sanitize =
       HttpAttributes::SortedHopByHopHeaders();
-  changed = RemoveAllFromSortedArray(&names_to_sanitize[0],
-                                     names_to_sanitize.size()) ||
-            changed;
+  changed = RemoveAllFromSortedArray(
+      &names_to_sanitize[0], names_to_sanitize.size()) || changed;
   return changed;
 }
 
@@ -630,12 +644,14 @@ namespace {
 class InstawebCacheComputer : public CachingHeaders {
  public:
   explicit InstawebCacheComputer(const ResponseHeaders& headers)
-      : CachingHeaders(headers.status_code()), response_headers_(headers) {}
+      : CachingHeaders(headers.status_code()),
+        response_headers_(headers) {
+  }
 
-  ~InstawebCacheComputer() override {}
+  virtual ~InstawebCacheComputer() {}
 
   // Which status codes are cacheable by default.
-  bool IsCacheableResourceStatusCode() const override {
+  virtual bool IsCacheableResourceStatusCode() const {
     switch (status_code()) {
       // For our purposes, only a few status codes are cacheable.
       // Others like 203, 206 and 304 depend upon input headers and other state.
@@ -667,15 +683,15 @@ class InstawebCacheComputer : public CachingHeaders {
     // for redirects they actually want cached.
   }
 
-  bool IsLikelyStaticResourceType() const override {
+  virtual bool IsLikelyStaticResourceType() const {
     if (IsRedirectStatusCode()) {
       return true;  // redirects are cacheable
     }
     const ContentType* type = response_headers_.DetermineContentType();
-    return (type != nullptr) && type->IsLikelyStaticResource();
+    return (type != NULL) && type->IsLikelyStaticResource();
   }
 
-  bool Lookup(const StringPiece& key, StringPieceVector* values) override {
+  virtual bool Lookup(const StringPiece& key, StringPieceVector* values) {
     ConstStringStarVector value_strings;
     bool ret = response_headers_.Lookup(key, &value_strings);
     if (ret) {
@@ -711,8 +727,8 @@ void ResponseHeaders::ComputeCaching() {
     proto->set_date_ms(date_ms);
   }
 
-  bool has_last_modified =
-      ParseDateHeader(HttpAttributes::kLastModified, &last_modified_ms);
+  bool has_last_modified = ParseDateHeader(HttpAttributes::kLastModified,
+                                           &last_modified_ms);
   // Compute the timestamp if we can find it
   if (has_last_modified) {
     proto->set_last_modified_time_ms(last_modified_ms);
@@ -727,8 +743,9 @@ void ResponseHeaders::ComputeCaching() {
   bool force_caching_enabled = false;
 
   const ContentType* type = DetermineContentType();
-  if ((force_cache_ttl_ms_) > 0 && (status_code() == HttpStatus::kOK)) {
-    force_caching_enabled = (type == nullptr) || !type->IsHtmlLike();
+  if ((force_cache_ttl_ms_) > 0 &&
+      (status_code() == HttpStatus::kOK)) {
+    force_caching_enabled = (type == NULL) || !type->IsHtmlLike();
   }
 
   // Note: Unlike pagespeed algorithm, we are very conservative about calling
@@ -738,9 +755,10 @@ void ResponseHeaders::ComputeCaching() {
   // Note that if force caching is enabled, we consider a privately cacheable
   // resource as cacheable.
   bool is_browser_cacheable = computer.IsCacheable();
-  proto->set_browser_cacheable(has_date &&
-                               computer.IsAllowedCacheableStatusCode() &&
-                               (force_caching_enabled || is_browser_cacheable));
+  proto->set_browser_cacheable(
+      has_date &&
+      computer.IsAllowedCacheableStatusCode() &&
+      (force_caching_enabled || is_browser_cacheable));
   proto->set_requires_browser_revalidation(computer.MustRevalidate());
   proto->set_requires_proxy_revalidation(
       computer.ProxyRevalidate() || proto->requires_browser_revalidation());
@@ -776,7 +794,7 @@ void ResponseHeaders::ComputeCaching() {
     // Do not cache HTML or redirects with Set-Cookie / Set-Cookie2 header even
     // though they may have explicit caching directives. This is to prevent the
     // caching of user sensitive data due to misconfigured caching headers.
-    if (((type != nullptr && type->IsHtmlLike()) ||
+    if (((type != NULL && type->IsHtmlLike()) ||
          computer.IsRedirectStatusCode()) &&
         (Has(HttpAttributes::kSetCookie) || Has(HttpAttributes::kSetCookie2))) {
       proto->set_proxy_cacheable(false);
@@ -790,7 +808,8 @@ void ResponseHeaders::ComputeCaching() {
       DCHECK(has_date);
       DCHECK(cache_ttl_ms == http_options_.implicit_cache_ttl_ms);
       proto->set_is_implicitly_cacheable(true);
-      SetDateAndCaching(date_ms, cache_ttl_ms, CacheControlValuesToPreserve());
+      SetDateAndCaching(date_ms, cache_ttl_ms,
+                        CacheControlValuesToPreserve());
     }
   } else {
     proto->set_expiration_time_ms(0);
@@ -822,7 +841,7 @@ GoogleString ResponseHeaders::CacheControlValuesToPreserve() {
 GoogleString ResponseHeaders::ToString() const {
   GoogleString str;
   StringWriter writer(&str);
-  WriteAsHttp(&writer, nullptr);
+  WriteAsHttp(&writer, NULL);
   return str;
 }
 
@@ -843,7 +862,7 @@ bool ResponseHeaders::IsGzipped() const {
   bool found = Lookup(HttpAttributes::kContentEncoding, &v);
   if (found) {
     for (int i = 0, n = v.size(); i < n; ++i) {
-      if ((v[i] != nullptr) && StringCaseEqual(*v[i], HttpAttributes::kGzip)) {
+      if ((v[i] != NULL) && StringCaseEqual(*v[i], HttpAttributes::kGzip)) {
         return true;
       }
     }
@@ -856,7 +875,7 @@ bool ResponseHeaders::WasGzippedLast() const {
   bool found = Lookup(HttpAttributes::kContentEncoding, &v);
   if (found) {
     int index = v.size() - 1;
-    if ((index > -1) && (v[index] != nullptr) &&
+    if ((index > -1) && (v[index] != NULL) &&
         StringCaseEqual(*v[index], HttpAttributes::kGzip)) {
       return true;
     }
@@ -870,11 +889,11 @@ void ResponseHeaders::DetermineContentTypeAndCharset(
     const ContentType** content_type_out, GoogleString* charset_out) const {
   ConstStringStarVector content_types;
 
-  if (content_type_out != nullptr) {
-    *content_type_out = nullptr;
+  if (content_type_out != NULL) {
+    *content_type_out = NULL;
   }
 
-  if (charset_out != nullptr) {
+  if (charset_out != NULL) {
     charset_out->clear();
   }
 
@@ -890,11 +909,11 @@ void ResponseHeaders::DetermineContentTypeAndCharset(
       charset.clear();
     }
 
-    if (content_type_out != nullptr) {
+    if (content_type_out != NULL) {
       *content_type_out = MimeTypeToContentType(mime_type);
     }
 
-    if (charset_out != nullptr) {
+    if (charset_out != NULL) {
       *charset_out = charset;
     }
   }
@@ -902,20 +921,20 @@ void ResponseHeaders::DetermineContentTypeAndCharset(
 
 GoogleString ResponseHeaders::DetermineCharset() const {
   GoogleString charset;
-  DetermineContentTypeAndCharset(nullptr, &charset);
+  DetermineContentTypeAndCharset(NULL, &charset);
   return charset;
 }
 
 const ContentType* ResponseHeaders::DetermineContentType() const {
-  const ContentType* content_type = nullptr;
-  DetermineContentTypeAndCharset(&content_type, nullptr);
+  const ContentType* content_type = NULL;
+  DetermineContentTypeAndCharset(&content_type, NULL);
   return content_type;
 }
 
-bool ResponseHeaders::ParseDateHeader(const StringPiece& attr,
-                                      int64* date_ms) const {
+bool ResponseHeaders::ParseDateHeader(
+    const StringPiece& attr, int64* date_ms) const {
   const char* date_string = Lookup1(attr);
-  return (date_string != nullptr) && ConvertStringToTime(date_string, date_ms);
+  return (date_string != NULL) && ConvertStringToTime(date_string, date_ms);
 }
 
 void ResponseHeaders::ParseFirstLine(const StringPiece& first_line) {
@@ -931,15 +950,16 @@ void ResponseHeaders::ParseFirstLineHelper(const StringPiece& first_line) {
   // We reserve enough to avoid buffer overflow on sscanf command.
   GoogleString reason_phrase(first_line.size(), '\0');
   char* reason_phrase_cstr = &reason_phrase[0];
-  int num_scanned =
-      sscanf(first_line.as_string().c_str(), "%d.%d %d %[^\n\t]s",
-             &major_version, &minor_version, &status, reason_phrase_cstr);
+  int num_scanned = sscanf(
+      first_line.as_string().c_str(), "%d.%d %d %[^\n\t]s",
+      &major_version, &minor_version, &status,
+      reason_phrase_cstr);
   if (num_scanned < 3) {
     LOG(WARNING) << "Could not parse first line: " << first_line;
   } else {
     if (num_scanned == 3) {
-      reason_phrase =
-          HttpStatus::GetReasonPhrase(static_cast<HttpStatus::Code>(status));
+      reason_phrase = HttpStatus::GetReasonPhrase(
+          static_cast<HttpStatus::Code>(status));
       reason_phrase_cstr = &reason_phrase[0];
     }
     set_first_line(major_version, minor_version, status, reason_phrase_cstr);
@@ -960,7 +980,7 @@ void ResponseHeaders::SetCacheControlMaxAge(int64 ttl_ms) {
       StrCat("max-age=", Integer64ToString(ttl_ms / Timer::kSecondMs));
 
   for (int i = 0, n = values.size(); i < n; ++i) {
-    if (values[i] != nullptr) {
+    if (values[i] != NULL) {
       StringPiece val(*values[i]);
       if (!val.empty() && !StringCaseStartsWith(val, "max-age")) {
         StrAppend(&new_cache_control_value, ",", val);
@@ -1001,7 +1021,7 @@ void ResponseHeaders::DebugPrint() const {
 
 bool ResponseHeaders::FindContentLength(int64* content_length) const {
   const char* val = Lookup1(HttpAttributes::kContentLength);
-  return (val != nullptr) && StringToInt64(val, content_length);
+  return (val != NULL) && StringToInt64(val, content_length);
 }
 
 void ResponseHeaders::ForceCaching(int64 ttl_ms) {
@@ -1019,8 +1039,8 @@ void ResponseHeaders::ForceCaching(int64 ttl_ms) {
 
 bool ResponseHeaders::UpdateCacheHeadersIfForceCached() {
   if (cache_fields_dirty_) {
-    LOG(DFATAL) << "Call ComputeCaching() before "
-                << "UpdateCacheHeadersIfForceCached";
+    LOG(DFATAL)  << "Call ComputeCaching() before "
+                 << "UpdateCacheHeadersIfForceCached";
     return false;
   }
   if (force_cached_) {
@@ -1039,8 +1059,8 @@ int64 ResponseHeaders::SizeEstimate() const {
   int64 len = STATIC_STRLEN("HTTP/1.x 123 ") +  // All statuses are 3 digits.
               strlen(reason_phrase()) + STATIC_STRLEN("\r\n");
   for (int i = 0, n = NumAttributes(); i < n; ++i) {
-    len += Name(i).length() + STATIC_STRLEN(": ") + Value(i).length() +
-           STATIC_STRLEN("\r\n");
+    len += Name(i).length() + STATIC_STRLEN(": ") +
+           Value(i).length() + STATIC_STRLEN("\r\n");
   }
   len += STATIC_STRLEN("\r\n");
   return len;
@@ -1060,7 +1080,7 @@ bool ResponseHeaders::GetCookieString(GoogleString* cookie_str) const {
     GoogleString escaped;
     EscapeToJsStringLiteral(*cookies[i], true, &escaped);
     StrAppend(cookie_str, escaped);
-    if (i != (n - 1)) {
+    if (i != (n-1)) {
       StrAppend(cookie_str, ",");
     }
   }
@@ -1068,16 +1088,17 @@ bool ResponseHeaders::GetCookieString(GoogleString* cookie_str) const {
   return true;
 }
 
-bool ResponseHeaders::HasCookie(StringPiece name, StringPieceVector* values,
+bool ResponseHeaders::HasCookie(StringPiece name,
+                                StringPieceVector* values,
                                 StringPieceVector* attributes) const {
   const CookieMultimap* cookies = PopulateCookieMap(HttpAttributes::kSetCookie);
   CookieMultimapConstIter from = cookies->lower_bound(name);
   CookieMultimapConstIter to = cookies->upper_bound(name);
   for (CookieMultimapConstIter iter = from; iter != to; ++iter) {
-    if (values != nullptr) {
+    if (values != NULL) {
       values->push_back(iter->second.first);
     }
-    if (attributes != nullptr) {
+    if (attributes != NULL) {
       StringPieceVector items;
       SplitStringPieceToVector(iter->second.second, ";", &items, true);
       attributes->insert(attributes->end(), items.begin(), items.end());
@@ -1133,11 +1154,12 @@ bool ResponseHeaders::SetQueryParamsAsCookies(
       // double-escape by GoogleUrl escaping the QueryParams escaped value.
       const GoogleString* value = params.EscapedValue(i);
       GoogleString escaped_value;
-      if (value != nullptr) {
+      if (value != NULL) {
         escaped_value = StrCat("=", GoogleUrl::EscapeQueryParam(*value));
       }
-      GoogleString cookie = StrCat(name, escaped_value, "; Expires=", expires,
-                                   "; Domain=", host, "; Path=/; HttpOnly");
+      GoogleString cookie = StrCat(
+          name, escaped_value, "; Expires=", expires, "; Domain=", host,
+          "; Path=/; HttpOnly");
       Add(HttpAttributes::kSetCookie, cookie);
       result = true;
     }
@@ -1178,7 +1200,9 @@ bool ResponseHeaders::ClearOptionCookies(
   return result;
 }
 
-void ResponseHeaders::UpdateHook() { cache_fields_dirty_ = true; }
+void ResponseHeaders::UpdateHook() {
+  cache_fields_dirty_ = true;
+}
 
 GoogleString ResponseHeaders::RelCanonicalHeaderValue(StringPiece url) {
   return StrCat("<", GoogleUrl::Sanitize(url), ">; rel=\"canonical\"");
@@ -1191,7 +1215,8 @@ bool ResponseHeaders::HasLinkRelCanonical() const {
     StringPiece cand(*links[i]);
     stringpiece_ssize_type rel_pos = cand.find("rel");
     stringpiece_ssize_type can_pos = cand.rfind("canonical");
-    if (rel_pos != StringPiece::npos && can_pos != StringPiece::npos &&
+    if (rel_pos != StringPiece::npos &&
+        can_pos != StringPiece::npos &&
         rel_pos < can_pos) {
       return true;
     }
@@ -1211,7 +1236,8 @@ void ResponseHeaders::SetSMaxAge(int s_maxage_sec) {
     existing_cache_control = JoinStringStar(values, ", ");
   }
 
-  if (ApplySMaxAge(s_maxage_sec, existing_cache_control,
+  if (ApplySMaxAge(s_maxage_sec,
+                   existing_cache_control,
                    &updated_cache_control)) {
     Replace(HttpAttributes::kCacheControl, updated_cache_control);
   }
@@ -1222,8 +1248,8 @@ bool ResponseHeaders::ApplySMaxAge(int s_maxage_sec,
                                    StringPiece existing_cache_control,
                                    GoogleString* updated_cache_control) {
   TrimWhitespace(&existing_cache_control);
-  GoogleString s_maxage_str =
-      StrCat("s-maxage=", IntegerToString(s_maxage_sec));
+  GoogleString s_maxage_str = StrCat("s-maxage=",
+                                     IntegerToString(s_maxage_sec));
   if (existing_cache_control.empty()) {
     *updated_cache_control = s_maxage_str;
     return true;
@@ -1286,7 +1312,7 @@ bool ResponseHeaders::ApplySMaxAge(int s_maxage_sec,
   // something more cacheable, we only add s-maxage if it's lower than the
   // lowest existing max-age header.
   bool found_existing_maxage = false;
-  int lowest_existing_maxage_value = s_maxage_sec + 1;
+  int lowest_existing_maxage_value = s_maxage_sec+1;
   for (StringPiece& segment : segments) {
     if (StringCaseStartsWith(segment, "max-age=")) {
       found_existing_maxage = true;

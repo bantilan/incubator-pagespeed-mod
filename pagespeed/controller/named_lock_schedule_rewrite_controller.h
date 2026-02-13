@@ -17,17 +17,18 @@
  * under the License.
  */
 
+
 #ifndef PAGESPEED_CONTROLLER_NAMED_LOCK_SCHEDULE_REWRITE_CONTROLLER_H_
 #define PAGESPEED_CONTROLLER_NAMED_LOCK_SCHEDULE_REWRITE_CONTROLLER_H_
 
 #include <unordered_set>
 
-#include "absl/container/flat_hash_map.h"
 #include "pagespeed/controller/schedule_rewrite_controller.h"
 #include "pagespeed/kernel/base/abstract_mutex.h"
 #include "pagespeed/kernel/base/basictypes.h"
 #include "pagespeed/kernel/base/function.h"
 #include "pagespeed/kernel/base/named_lock_manager.h"
+#include "pagespeed/kernel/base/rde_hash_map.h"
 #include "pagespeed/kernel/base/scoped_ptr.h"
 #include "pagespeed/kernel/base/statistics.h"
 #include "pagespeed/kernel/base/string.h"
@@ -52,12 +53,12 @@ class NamedLockScheduleRewriteController : public ScheduleRewriteController {
   NamedLockScheduleRewriteController(NamedLockManager* lock_manager,
                                      ThreadSystem* thread_system,
                                      Statistics* statistics);
-  ~NamedLockScheduleRewriteController() override;
+  virtual ~NamedLockScheduleRewriteController();
 
   // ScheduleRewriteController interface.
-  void ScheduleRewrite(const GoogleString& key, Function* callback) override;
-  void NotifyRewriteComplete(const GoogleString& key) override;
-  void NotifyRewriteFailed(const GoogleString& key) override;
+  virtual void ScheduleRewrite(const GoogleString& key, Function* callback);
+  virtual void NotifyRewriteComplete(const GoogleString& key);
+  virtual void NotifyRewriteFailed(const GoogleString& key);
 
   void ShutDown() override;
 
@@ -65,9 +66,9 @@ class NamedLockScheduleRewriteController : public ScheduleRewriteController {
 
  private:
   struct LockInfo {
-    LockInfo() : pin_count(0) {}
+    LockInfo() : pin_count(0) { }
     // lock is only non-NULL when we have successfully obtained it.
-    std::unique_ptr<NamedLock> lock;
+    scoped_ptr<NamedLock> lock;
 
     std::unordered_set<Function*> pending_callbacks;
 
@@ -80,7 +81,7 @@ class NamedLockScheduleRewriteController : public ScheduleRewriteController {
     DISALLOW_COPY_AND_ASSIGN(LockInfo);
   };
 
-  typedef absl::flat_hash_map<GoogleString, LockInfo*, CasePreserveStringHash>
+  typedef rde::hash_map<GoogleString, LockInfo*, CasePreserveStringHash>
       LockMap;
 
   void LockObtained(Function* callback, const GoogleString key, NamedLock* lock)
@@ -93,7 +94,7 @@ class NamedLockScheduleRewriteController : public ScheduleRewriteController {
   void DeleteInfoIfUnused(LockInfo* info, const GoogleString& key)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  std::unique_ptr<AbstractMutex> mutex_;
+  scoped_ptr<AbstractMutex> mutex_;
   NamedLockManager* lock_manager_;
   LockMap locks_ GUARDED_BY(mutex_);
   bool shut_down_ GUARDED_BY(mutex_);

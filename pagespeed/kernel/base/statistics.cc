@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 #include "pagespeed/kernel/base/statistics.h"
 
 #include <limits>
@@ -46,9 +47,11 @@ const double kBarWidthTotal = 400;
 
 class MessageHandler;
 
-Variable::~Variable() {}
+Variable::~Variable() {
+}
 
-UpDownCounter::~UpDownCounter() {}
+UpDownCounter::~UpDownCounter() {
+}
 
 int64 UpDownCounter::SetReturningPreviousValue(int64 value) {
   int64 previous_value = Get();
@@ -56,10 +59,11 @@ int64 UpDownCounter::SetReturningPreviousValue(int64 value) {
   return previous_value;
 }
 
-MutexedScalar::~MutexedScalar() {}
+MutexedScalar::~MutexedScalar() {
+}
 
 int64 MutexedScalar::Get() const {
-  if (mutex() != nullptr) {
+  if (mutex() != NULL) {
     ScopedMutex hold_lock(mutex());
     return GetLockHeld();
   } else {
@@ -68,14 +72,14 @@ int64 MutexedScalar::Get() const {
 }
 
 void MutexedScalar::Set(int64 new_value) {
-  if (mutex() != nullptr) {
+  if (mutex() != NULL) {
     ScopedMutex hold_lock(mutex());
     SetLockHeld(new_value);
   }
 }
 
 int64 MutexedScalar::SetReturningPreviousValue(int64 new_value) {
-  if (mutex() != nullptr) {
+  if (mutex() != NULL) {
     ScopedMutex hold_lock(mutex());
     return SetReturningPreviousValueLockHeld(new_value);
   } else {
@@ -84,7 +88,7 @@ int64 MutexedScalar::SetReturningPreviousValue(int64 new_value) {
 }
 
 int64 MutexedScalar::AddHelper(int64 delta) {
-  if (mutex() != nullptr) {
+  if (mutex() != NULL) {
     ScopedMutex hold_lock(mutex());
     return AddLockHeld(delta);
   } else {
@@ -102,34 +106,35 @@ int64 MutexedScalar::AddLockHeld(int64 delta) {
   return value;
 }
 
-Histogram::~Histogram() {}
+Histogram::~Histogram() {
+}
 
 CountHistogram::CountHistogram(AbstractMutex* mutex)
     : mutex_(mutex), count_(0) {}
 
-CountHistogram::~CountHistogram() {}
+CountHistogram::~CountHistogram() {
+}
 
-TimedVariable::~TimedVariable() {}
+TimedVariable::~TimedVariable() {
+}
 
 FakeTimedVariable::FakeTimedVariable(StringPiece name, Statistics* stats)
-    : var_(stats->AddVariable(name)) {}
+    : var_(stats->AddVariable(name)) {
+}
 
-FakeTimedVariable::~FakeTimedVariable() {}
+FakeTimedVariable::~FakeTimedVariable() {
+}
 
 void Histogram::WriteRawHistogramData(Writer* writer, MessageHandler* handler) {
-  const char bucket_style[] =
-      "<tr><td style=\"padding: 0 0 0 0.25em\">"
+  const char bucket_style[] = "<tr><td style=\"padding: 0 0 0 0.25em\">"
       "[</td><td style=\"text-align:right;padding:0 0.25em 0 0\">"
       "%s,</td><td style=text-align:right;padding: 0 0.25em\">%s)</td>";
-  const char value_style[] =
-      "<td style=\"text-align:right;padding:0 0.25em\">"
-      "%.f</td>";
-  const char perc_style[] =
-      "<td style=\"text-align:right;padding:0 0.25em\">"
-      "%.1f%%</td>";
-  const char bar_style[] =
-      "<td><div style=\"width: %.fpx;height:%.fpx;"
-      "background-color:blue\"></div></td>";
+  const char value_style[] = "<td style=\"text-align:right;padding:0 0.25em\">"
+                             "%.f</td>";
+  const char perc_style[] = "<td style=\"text-align:right;padding:0 0.25em\">"
+                            "%.1f%%</td>";
+  const char bar_style[] = "<td><div style=\"width: %.fpx;height:%.fpx;"
+                           "background-color:blue\"></div></td>";
   double count = CountInternal();
   double perc = 0;
   double cumulative_perc = 0;
@@ -144,11 +149,11 @@ void Histogram::WriteRawHistogramData(Writer* writer, MessageHandler* handler) {
     double lower_bound = BucketStart(i);
     double upper_bound = BucketLimit(i);
 
-    GoogleString lower_bound_string = absl::StrFormat("%.0f", lower_bound);
+    GoogleString lower_bound_string = StringPrintf("%.0f", lower_bound);
     if (lower_bound == -std::numeric_limits<double>::infinity()) {
       lower_bound_string = "-&infin;";
     }
-    GoogleString upper_bound_string = absl::StrFormat("%.0f", upper_bound);
+    GoogleString upper_bound_string = StringPrintf("%.0f", upper_bound);
     if (upper_bound == std::numeric_limits<double>::infinity()) {
       upper_bound_string = "&infin;";
     }
@@ -156,12 +161,13 @@ void Histogram::WriteRawHistogramData(Writer* writer, MessageHandler* handler) {
     perc = value * 100 / count;
     cumulative_perc += perc;
     GoogleString output = StrCat(
-        absl::StrFormat(bucket_style, lower_bound_string.c_str(),
-                        upper_bound_string.c_str()),
-        absl::StrFormat(value_style, value), absl::StrFormat(perc_style, perc),
-        absl::StrFormat(perc_style, cumulative_perc),
-        absl::StrFormat(bar_style, (perc * kBarWidthTotal) / 100,
-                        kBarHeightPerBucket));
+        StringPrintf(bucket_style, lower_bound_string.c_str(),
+                     upper_bound_string.c_str()),
+        StringPrintf(value_style, value),
+        StringPrintf(perc_style, perc),
+        StringPrintf(perc_style, cumulative_perc),
+        StringPrintf(bar_style, (perc * kBarWidthTotal) / 100,
+                     kBarHeightPerBucket));
     writer->Write(output, handler);
   }
   // Write suffix of the table.
@@ -169,9 +175,8 @@ void Histogram::WriteRawHistogramData(Writer* writer, MessageHandler* handler) {
 }
 
 void Histogram::Render(int index, Writer* writer, MessageHandler* handler) {
-  writer->Write(
-      absl::StrFormat("<div id='hist_%d' style='display:none'>", index),
-      handler);
+  writer->Write(StringPrintf("<div id='hist_%d' style='display:none'>", index),
+                handler);
 
   // Don't hold a lock while calling the writer, as this can deadlock if
   // the writer itself winds up invoking pagespeed, causing the histogram
@@ -188,7 +193,8 @@ void Histogram::Render(int index, Writer* writer, MessageHandler* handler) {
   writer->Write("</div>\n", handler);
 }
 
-Statistics::~Statistics() {}
+Statistics::~Statistics() {
+}
 
 UpDownCounter* Statistics::AddGlobalUpDownCounter(const StringPiece& name) {
   return AddUpDownCounter(name);
@@ -279,15 +285,13 @@ void Statistics::RenderHistograms(Writer* writer, MessageHandler* handler) {
 
   // Write table data for each histogram.
   if (populated_histograms.empty()) {
-    writer->Write(
-        "<em>No histogram data yet.  Refresh once there is "
-        "traffic.</em>",
-        handler);
+    writer->Write("<em>No histogram data yet.  Refresh once there is "
+                  "traffic.</em>", handler);
   } else {
     // Write the table header for all histograms.
-    writer->Write(
-        StringPiece(kHistogramProlog, STATIC_STRLEN(kHistogramProlog)),
-        handler);
+    writer->Write(StringPiece(kHistogramProlog,
+                              STATIC_STRLEN(kHistogramProlog)),
+                  handler);
 
     // Write a row of the table data for each non-empty histogram.
     CHECK_EQ(populated_histogram_names.size(), populated_histograms.size());
@@ -296,9 +300,9 @@ void Statistics::RenderHistograms(Writer* writer, MessageHandler* handler) {
       GoogleString row = hist->HtmlTableRow(populated_histogram_names[i], i);
       writer->Write(row, handler);
     }
-    writer->Write(
-        StringPiece(kHistogramEpilog, STATIC_STRLEN(kHistogramEpilog)),
-        handler);
+    writer->Write(StringPiece(kHistogramEpilog,
+                              STATIC_STRLEN(kHistogramEpilog)),
+                  handler);
 
     // Render the non-empty histograms.
     for (int i = 0, n = populated_histograms.size(); i < n; ++i) {
@@ -307,26 +311,35 @@ void Statistics::RenderHistograms(Writer* writer, MessageHandler* handler) {
 
     // Write the JavaScript to display the histograms and highlight the row
     // when selected.
-    writer->Write(
-        StringPiece(kHistogramScript, STATIC_STRLEN(kHistogramScript)),
-        handler);
+    writer->Write(StringPiece(kHistogramScript,
+                              STATIC_STRLEN(kHistogramScript)),
+                  handler);
   }
   writer->Write("<hr/>\n", handler);
 }
 
 GoogleString Histogram::HtmlTableRow(const GoogleString& title, int index) {
   ScopedMutex hold(lock());
-  return absl::StrFormat(
-      kHistogramRowFormat, index, (index == 0) ? " selected" : "", index,
-      title.c_str(), CountInternal(), AverageInternal(),
-      StandardDeviationInternal(), MinimumInternal(), PercentileInternal(50),
-      MaximumInternal(), PercentileInternal(90), PercentileInternal(95),
+  return StringPrintf(
+      kHistogramRowFormat,
+      index,
+      (index == 0) ? " selected" : "",
+      index,
+      title.c_str(),
+      CountInternal(),
+      AverageInternal(),
+      StandardDeviationInternal(),
+      MinimumInternal(),
+      PercentileInternal(50),
+      MaximumInternal(),
+      PercentileInternal(90),
+      PercentileInternal(95),
       PercentileInternal(99));
 }
 
 void Statistics::RenderTimedVariables(Writer* writer,
                                       MessageHandler* message_handler) {
-  TimedVariable* timedvar = nullptr;
+  TimedVariable* timedvar = NULL;
   const GoogleString end("</table>\n<td>\n<td>\n");
   std::map<GoogleString, StringVector> group_map = TimedVariableMap();
   std::map<GoogleString, StringVector>::const_iterator p;
@@ -336,7 +349,8 @@ void Statistics::RenderTimedVariables(Writer* writer,
     const GoogleString begin = StrCat(
         "<p><table bgcolor=#eeeeff width=100%%>",
         "<tr align=center><td><font size=+2>", p->first,
-        "</font></td></tr></table>", "</p>\n<td>\n<td>\n<td>\n<td>\n<td>\n",
+        "</font></td></tr></table>",
+        "</p>\n<td>\n<td>\n<td>\n<td>\n<td>\n",
         "<table bgcolor=#fff5ee frame=box cellspacing=1 cellpadding=2>\n",
         "<tr bgcolor=#eee5de><td>"
         "<form action=\"/statusz/reset\" method = \"post\">"
@@ -347,15 +361,14 @@ void Statistics::RenderTimedVariables(Writer* writer,
     // Write each statistic as a row in the table.
     for (int i = 0, n = p->second.size(); i < n; ++i) {
       timedvar = FindTimedVariable(p->second[i]);
-      const GoogleString content = absl::StrFormat(
-          "<tr><td> %s </td>"
+      const GoogleString content = StringPrintf("<tr><td> %s </td>"
           "<td align=right> %s </td><td align=right> %s </td>"
           "<td align=right> %s </td><td align=right> %s </td></tr>",
-          p->second[i].c_str(),
-          Integer64ToString(timedvar->Get(TimedVariable::TENSEC)).c_str(),
-          Integer64ToString(timedvar->Get(TimedVariable::MINUTE)).c_str(),
-          Integer64ToString(timedvar->Get(TimedVariable::HOUR)).c_str(),
-          Integer64ToString(timedvar->Get(TimedVariable::START)).c_str());
+      p->second[i].c_str(),
+      Integer64ToString(timedvar->Get(TimedVariable::TENSEC)).c_str(),
+      Integer64ToString(timedvar->Get(TimedVariable::MINUTE)).c_str(),
+      Integer64ToString(timedvar->Get(TimedVariable::HOUR)).c_str(),
+      Integer64ToString(timedvar->Get(TimedVariable::START)).c_str());
       writer->Write(content, message_handler);
     }
     // Write table ending part.
@@ -365,15 +378,15 @@ void Statistics::RenderTimedVariables(Writer* writer,
 
 int64 Statistics::LookupValue(StringPiece stat_name) {
   Variable* var = FindVariable(stat_name);
-  if (var != nullptr) {
+  if (var != NULL) {
     return var->Get();
   }
   UpDownCounter* counter = FindUpDownCounter(stat_name);
-  if (counter != nullptr) {
+  if (counter != NULL) {
     return counter->Get();
   }
   TimedVariable* tvar = FindTimedVariable(stat_name);
-  if (tvar != nullptr) {
+  if (tvar != NULL) {
     return tvar->Get(TimedVariable::START);
   }
   LOG(FATAL) << "Could not find stat: " << stat_name;

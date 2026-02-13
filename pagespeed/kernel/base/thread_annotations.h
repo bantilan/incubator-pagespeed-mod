@@ -17,10 +17,26 @@
  * under the License.
  */
 
-#pragma once
-#define ABSL_LEGACY_THREAD_ANNOTATIONS 1
-#include "absl/base/thread_annotations.h"
+#ifndef PAGESPEED_KERNEL_BASE_THREAD_ANNOTATIONS_H_
+#define PAGESPEED_KERNEL_BASE_THREAD_ANNOTATIONS_H_
 
-// TODO(oschaaf): move this out of here.
-#include "absl/base/attributes.h"
-#define WARN_UNUSED_RESULT ABSL_MUST_USE_RESULT
+#define GUARDED_BY(x)
+#define GUARDED_VAR
+#define PT_GUARDED_BY(x)
+#define PT_GUARDED_VAR
+#define ACQUIRED_AFTER(...)
+#define ACQUIRED_BEFORE(...)
+#define LOCKABLE
+#define SCOPED_LOCKABLE
+#define EXCLUSIVE_LOCK_FUNCTION(...)
+#define SHARED_LOCK_FUNCTION(...)
+#define EXCLUSIVE_TRYLOCK_FUNCTION(...)
+#define SHARED_TRYLOCK_FUNCTION(...)
+#define UNLOCK_FUNCTION(...)
+#define LOCK_RETURNED(x)
+#define LOCKS_EXCLUDED(...)
+#define EXCLUSIVE_LOCKS_REQUIRED(...)
+#define SHARED_LOCKS_REQUIRED(...)
+#define NO_THREAD_SAFETY_ANALYSIS
+
+#endif  // PAGESPEED_KERNEL_BASE_THREAD_ANNOTATIONS_H_

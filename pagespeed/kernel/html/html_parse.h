@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 #ifndef PAGESPEED_KERNEL_HTML_HTML_PARSE_H_
 #define PAGESPEED_KERNEL_HTML_HTML_PARSE_H_
 
@@ -50,7 +51,7 @@ class HtmlLexer;
 class MessageHandler;
 class Timer;
 
-typedef std::set<const HtmlEvent*> ConstHtmlEventSet;
+typedef std::set <const HtmlEvent*> ConstHtmlEventSet;
 
 // Streaming Html Parser API.  Callbacks defined in HtmlFilter are
 // called on each parser token.
@@ -163,13 +164,15 @@ class HtmlParse {
   // false.
   virtual void FinishParse();
 
+
   // Utility methods for implementing filters
 
   // These "New*" functions do *not* append the new node to the parent; you
   // must do that yourself.  Also note that in the context of a filter, you
   // must add parents to the DOM in some fashion, before appending children to
   // parents.
-  HtmlCdataNode* NewCdataNode(HtmlElement* parent, const StringPiece& contents);
+  HtmlCdataNode* NewCdataNode(HtmlElement* parent,
+                              const StringPiece& contents);
   HtmlCharactersNode* NewCharactersNode(HtmlElement* parent,
                                         const StringPiece& literal);
   HtmlCommentNode* NewCommentNode(HtmlElement* parent,
@@ -320,7 +323,7 @@ class HtmlParse {
                                  HtmlElement::DOUBLE_QUOTE);
   }
   void AddEscapedAttribute(HtmlElement* element, HtmlName::Keyword keyword,
-                           const StringPiece& escaped_value) {
+                    const StringPiece& escaped_value) {
     return element->AddEscapedAttribute(MakeName(keyword), escaped_value,
                                         HtmlElement::DOUBLE_QUOTE);
   }
@@ -386,7 +389,7 @@ class HtmlParse {
   int line_number() const { return line_number_; }
   // Returns URL (or id) and line number as a string, to be used in messages.
   GoogleString UrlLine() const {
-    return absl::StrFormat("%s:%d", id(), line_number());
+    return StringPrintf("%s:%d", id(), line_number());
   }
 
   // Return the current assumed doctype of the document (based on the content
@@ -403,9 +406,9 @@ class HtmlParse {
   void FatalError(const char* filename, int line, const char* msg, ...)
       INSTAWEB_PRINTF_FORMAT(4, 5);
 
-  void InfoV(const char* file, int line, const char* msg, va_list args);
-  void WarningV(const char* file, int line, const char* msg, va_list args);
-  void ErrorV(const char* file, int line, const char* msg, va_list args);
+  void InfoV(const char* file, int line, const char *msg, va_list args);
+  void WarningV(const char* file, int line, const char *msg, va_list args);
+  void ErrorV(const char* file, int line, const char *msg, va_list args);
   void FatalErrorV(const char* file, int line, const char* msg, va_list args);
 
   // Report error message with current parsing filename and linenumber.
@@ -418,13 +421,13 @@ class HtmlParse {
   // at info level with a timeset offset from the parsing start time,
   void ShowProgress(const char* message);
 
-  void InfoHereV(const char* msg, va_list args) {
+  void InfoHereV(const char *msg, va_list args) {
     InfoV(id_.c_str(), line_number_, msg, args);
   }
-  void WarningHereV(const char* msg, va_list args) {
+  void WarningHereV(const char *msg, va_list args) {
     WarningV(id_.c_str(), line_number_, msg, args);
   }
-  void ErrorHereV(const char* msg, va_list args) {
+  void ErrorHereV(const char *msg, va_list args) {
     ErrorV(id_.c_str(), line_number_, msg, args);
   }
   void FatalErrorHereV(const char* msg, va_list args) {
@@ -507,7 +510,9 @@ class HtmlParse {
   void RestoreDeferredNode(HtmlNode* deferred_node);
 
   // Returns whether the filter pipeline can rewrite urls.
-  bool can_modify_urls() { return can_modify_urls_; }
+  bool can_modify_urls() {
+    return can_modify_urls_;
+  }
 
  protected:
   typedef std::vector<HtmlFilter*> FilterVector;
@@ -655,9 +660,9 @@ class HtmlParse {
   bool running_filters_;
   bool buffer_events_;
   int64 parse_start_time_us_;
-  std::unique_ptr<HtmlEvent> delayed_start_literal_;
+  scoped_ptr<HtmlEvent> delayed_start_literal_;
   Timer* timer_;
-  HtmlFilter* current_filter_;  // Filter currently running in ApplyFilter
+  HtmlFilter* current_filter_;      // Filter currently running in ApplyFilter
 
   // When deferring a node that spans a flush window, we present upstream
   // filters with a view of the event-stream that is not impacted by the

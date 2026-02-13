@@ -23,11 +23,11 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_join.h"
+#include "base/strings/string_util.h"
 
 inline void JoinStrings(const std::vector<std::string>& parts,
                         const char* delim, std::string* result) {
-  *result = absl::StrJoin(parts, delim);
+  *result = JoinString(parts, delim);
 }
 
 #endif  // STRINGS_JOIN_H_

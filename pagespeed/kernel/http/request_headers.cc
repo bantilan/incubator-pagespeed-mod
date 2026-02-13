@@ -17,6 +17,8 @@
  * under the License.
  */
 
+
+
 #include "pagespeed/kernel/http/request_headers.h"
 
 #include <map>
@@ -56,7 +58,7 @@ void RequestHeaders::CopyFrom(const RequestHeaders& other) {
 GoogleString RequestHeaders::ToString() const {
   GoogleString str;
   StringWriter writer(&str);
-  WriteAsHttp("", &writer, nullptr);
+  WriteAsHttp("", &writer, NULL);
   return str;
 }
 
@@ -68,66 +70,33 @@ GoogleString RequestHeaders::ToString() const {
 void RequestHeaders::set_method(Method method) {
   HttpRequestHeaders* proto = mutable_proto();
   switch (method) {
-    case kOptions:
-      proto->set_method(HttpRequestHeaders::OPTIONS);
-      break;
-    case kGet:
-      proto->set_method(HttpRequestHeaders::GET);
-      break;
-    case kHead:
-      proto->set_method(HttpRequestHeaders::HEAD);
-      break;
-    case kPost:
-      proto->set_method(HttpRequestHeaders::POST);
-      break;
-    case kPut:
-      proto->set_method(HttpRequestHeaders::PUT);
-      break;
-    case kDelete:
-      proto->set_method(HttpRequestHeaders::DELETE);
-      break;
-    case kTrace:
-      proto->set_method(HttpRequestHeaders::TRACE);
-      break;
-    case kConnect:
-      proto->set_method(HttpRequestHeaders::CONNECT);
-      break;
-    case kPatch:
-      proto->set_method(HttpRequestHeaders::PATCH);
-      break;
-    case kPurge:
-      proto->set_method(HttpRequestHeaders::PURGE);
-      break;
-    case kError:
-      proto->set_method(HttpRequestHeaders::INVALID);
-      break;
+    case kOptions:     proto->set_method(HttpRequestHeaders::OPTIONS); break;
+    case kGet:         proto->set_method(HttpRequestHeaders::GET);     break;
+    case kHead:        proto->set_method(HttpRequestHeaders::HEAD);    break;
+    case kPost:        proto->set_method(HttpRequestHeaders::POST);    break;
+    case kPut:         proto->set_method(HttpRequestHeaders::PUT);     break;
+    case kDelete:      proto->set_method(HttpRequestHeaders::DELETE);  break;
+    case kTrace:       proto->set_method(HttpRequestHeaders::TRACE);   break;
+    case kConnect:     proto->set_method(HttpRequestHeaders::CONNECT); break;
+    case kPatch:       proto->set_method(HttpRequestHeaders::PATCH);   break;
+    case kPurge:       proto->set_method(HttpRequestHeaders::PURGE);   break;
+    case kError:       proto->set_method(HttpRequestHeaders::INVALID); break;
   }
 }
 
 RequestHeaders::Method RequestHeaders::method() const {
   switch (proto()->method()) {
-    case HttpRequestHeaders::OPTIONS:
-      return kOptions;
-    case HttpRequestHeaders::GET:
-      return kGet;
-    case HttpRequestHeaders::HEAD:
-      return kHead;
-    case HttpRequestHeaders::POST:
-      return kPost;
-    case HttpRequestHeaders::PUT:
-      return kPut;
-    case HttpRequestHeaders::DELETE:
-      return kDelete;
-    case HttpRequestHeaders::TRACE:
-      return kTrace;
-    case HttpRequestHeaders::CONNECT:
-      return kConnect;
-    case HttpRequestHeaders::PATCH:
-      return kPatch;
-    case HttpRequestHeaders::PURGE:
-      return kPurge;
-    case HttpRequestHeaders::INVALID:
-      return kError;
+    case HttpRequestHeaders::OPTIONS:     return kOptions;
+    case HttpRequestHeaders::GET:         return kGet;
+    case HttpRequestHeaders::HEAD:        return kHead;
+    case HttpRequestHeaders::POST:        return kPost;
+    case HttpRequestHeaders::PUT:         return kPut;
+    case HttpRequestHeaders::DELETE:      return kDelete;
+    case HttpRequestHeaders::TRACE:       return kTrace;
+    case HttpRequestHeaders::CONNECT:     return kConnect;
+    case HttpRequestHeaders::PATCH:       return kPatch;
+    case HttpRequestHeaders::PURGE:       return kPurge;
+    case HttpRequestHeaders::INVALID:     return kError;
   }
   LOG(DFATAL) << "Invalid method";
   return kGet;
@@ -135,31 +104,20 @@ RequestHeaders::Method RequestHeaders::method() const {
 
 const char* RequestHeaders::method_string() const {
   switch (proto()->method()) {
-    case HttpRequestHeaders::OPTIONS:
-      return "OPTIONS";
-    case HttpRequestHeaders::GET:
-      return "GET";
-    case HttpRequestHeaders::HEAD:
-      return "HEAD";
-    case HttpRequestHeaders::POST:
-      return "POST";
-    case HttpRequestHeaders::PUT:
-      return "PUT";
-    case HttpRequestHeaders::DELETE:
-      return "DELETE";
-    case HttpRequestHeaders::TRACE:
-      return "TRACE";
-    case HttpRequestHeaders::CONNECT:
-      return "CONNECT";
-    case HttpRequestHeaders::PATCH:
-      return "PATCH";
-    case HttpRequestHeaders::PURGE:
-      return "PURGE";
-    case HttpRequestHeaders::INVALID:
-      return "ERROR";
+    case HttpRequestHeaders::OPTIONS:     return "OPTIONS";
+    case HttpRequestHeaders::GET:         return "GET";
+    case HttpRequestHeaders::HEAD:        return "HEAD";
+    case HttpRequestHeaders::POST:        return "POST";
+    case HttpRequestHeaders::PUT:         return "PUT";
+    case HttpRequestHeaders::DELETE:      return "DELETE";
+    case HttpRequestHeaders::TRACE:       return "TRACE";
+    case HttpRequestHeaders::CONNECT:     return "CONNECT";
+    case HttpRequestHeaders::PATCH:       return "PATCH";
+    case HttpRequestHeaders::PURGE:       return "PURGE";
+    case HttpRequestHeaders::INVALID:     return "ERROR";
   }
   LOG(DFATAL) << "Invalid method";
-  return nullptr;
+  return NULL;
 }
 
 const GoogleString& RequestHeaders::message_body() const {
@@ -171,12 +129,12 @@ void RequestHeaders::set_message_body(const GoogleString& data) {
 }
 
 // Serialize meta-data to a binary stream.
-bool RequestHeaders::WriteAsHttp(const StringPiece& url, Writer* writer,
-                                 MessageHandler* handler) const {
+bool RequestHeaders::WriteAsHttp(
+    const StringPiece& url, Writer* writer, MessageHandler* handler) const {
   bool ret = true;
-  GoogleString buf = absl::StrFormat("%s %s HTTP/%d.%d\r\n", method_string(),
-                                     url.as_string().c_str(), major_version(),
-                                     minor_version());
+  GoogleString buf = StringPrintf("%s %s HTTP/%d.%d\r\n",
+                                  method_string(), url.as_string().c_str(),
+                                  major_version(), minor_version());
   ret &= writer->Write(buf, handler);
   ret &= Headers<HttpRequestHeaders>::WriteAsHttp(writer, handler);
   return ret;
@@ -207,7 +165,7 @@ bool RequestHeaders::IsXmlHttpRequest() const {
   // It is not guaranteed that javascript present in the html loaded via
   // ajax request will execute.
   const char* x_requested_with = Lookup1(HttpAttributes::kXRequestedWith);
-  if (x_requested_with != nullptr &&
+  if (x_requested_with != NULL &&
       StringCaseEqual(x_requested_with, HttpAttributes::kXmlHttpRequest)) {
     return true;
   }

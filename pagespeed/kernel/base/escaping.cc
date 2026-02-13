@@ -17,11 +17,12 @@
  * under the License.
  */
 
+
 #include "pagespeed/kernel/base/escaping.h"
 
 #include <cstddef>
 
-////#include "strings/stringpiece_utils.h"
+#include "strings/stringpiece_utils.h"
 #include "pagespeed/kernel/base/basictypes.h"
 #include "pagespeed/kernel/base/string.h"
 #include "pagespeed/kernel/base/string_util.h"
@@ -35,7 +36,8 @@ namespace net_instaweb {
 // This is /almost/ completely right: U+2028 and U+2029 are
 // line terminators as well (ECMA 262-5 --- 7.3, 7.8.4), so should really be
 // escaped, too, but we don't have the encoding here.
-void EscapeToJsStringLiteral(const StringPiece& original, bool add_quotes,
+void EscapeToJsStringLiteral(const StringPiece& original,
+                             bool add_quotes,
                              GoogleString* escaped) {
   // Optimistically assume no escaping will be required and reserve enough space
   // for that result.  This assumes that either escaped is empty (or nearly so),
@@ -107,7 +109,8 @@ void EscapeToJsStringLiteral(const StringPiece& original, bool add_quotes,
   }
 }
 
-void EscapeToJsonStringLiteral(const StringPiece& original, bool add_quotes,
+void EscapeToJsonStringLiteral(const StringPiece& original,
+                               bool add_quotes,
                                GoogleString* escaped) {
   // Optimistically assume no escaping will be required and reserve enough space
   // for that result.
@@ -120,7 +123,7 @@ void EscapeToJsonStringLiteral(const StringPiece& original, bool add_quotes,
 
     if (code <= 0x1F || code > 0x7F || code == '<' || code == '>' ||
         code == '"' || code == '\\') {
-      *(escaped) += absl::StrFormat("\\u00%02x", code);
+      *(escaped) += StringPrintf("\\u00%02x", code);
     } else {
       *(escaped) += original[c];
     }

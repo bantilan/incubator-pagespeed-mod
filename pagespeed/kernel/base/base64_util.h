@@ -17,28 +17,39 @@
  * under the License.
  */
 
-#pragma once
 
-#include "absl/strings/escaping.h"
+#ifndef PAGESPEED_KERNEL_BASE_BASE64_UTIL_H_
+#define PAGESPEED_KERNEL_BASE_BASE64_UTIL_H_
+
 #include "pagespeed/kernel/base/string.h"
-#include "pagespeed/kernel/base/string_util.h"
+
+#include "base/strings/string_piece.h"
+#include "third_party/base64/base64.h"
 
 namespace net_instaweb {
 
+typedef base::StringPiece StringPiece;
+
 inline void Web64Encode(const StringPiece& in, GoogleString* out) {
-  *out = absl::WebSafeBase64Escape(in);
+  *out = web64_encode(reinterpret_cast<const unsigned char*>(in.data()),
+                      in.size());
 }
 
 inline bool Web64Decode(const StringPiece& in, GoogleString* out) {
-  return absl::WebSafeBase64Unescape(in, out);
+  bool ret = web64_decode(in.as_string(), out);
+  return ret;
 }
 
 inline void Mime64Encode(const StringPiece& in, GoogleString* out) {
-  *out = absl::Base64Escape(in);
+  *out = base64_encode(reinterpret_cast<const unsigned char*>(in.data()),
+                      in.size());
 }
 
 inline bool Mime64Decode(const StringPiece& in, GoogleString* out) {
-  return absl::Base64Unescape(in, out);
+  bool ret = base64_decode(in.as_string(), out);
+  return ret;
 }
 
 }  // namespace net_instaweb
+
+#endif  // PAGESPEED_KERNEL_BASE_BASE64_UTIL_H_

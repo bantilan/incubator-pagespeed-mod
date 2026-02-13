@@ -17,11 +17,12 @@
  * under the License.
  */
 
+
 #include "net/instaweb/rewriter/public/responsive_image_filter.h"
 
-#include <cstddef>  // for size_t
+#include <cstddef>                     // for size_t
 #include <memory>
-#include <utility>  // for pair
+#include <utility>                      // for pair
 
 #include "base/logging.h"
 #include "net/instaweb/rewriter/cached_result.pb.h"
@@ -52,9 +53,12 @@ ResponsiveImageFirstFilter::ResponsiveImageFirstFilter(RewriteDriver* driver)
   CHECK(!densities_.empty());
 }
 
-ResponsiveImageFirstFilter::~ResponsiveImageFirstFilter() {}
+ResponsiveImageFirstFilter::~ResponsiveImageFirstFilter() {
+}
 
-void ResponsiveImageFirstFilter::StartDocumentImpl() { candidate_map_.clear(); }
+void ResponsiveImageFirstFilter::StartDocumentImpl() {
+  candidate_map_.clear();
+}
 
 void ResponsiveImageFirstFilter::EndElementImpl(HtmlElement* element) {
   if (element->keyword() != HtmlName::kImg) {
@@ -67,13 +71,11 @@ void ResponsiveImageFirstFilter::EndElementImpl(HtmlElement* element) {
              element->HasAttribute(HtmlName::kPagespeedNoTransform)) {
     driver()->InsertDebugComment(
         "ResponsiveImageFilter: Not adding srcset because of "
-        "data-pagespeed-no-transform attribute.",
-        element);
+        "data-pagespeed-no-transform attribute.", element);
   } else if (element->HasAttribute(HtmlName::kSrcset)) {
     driver()->InsertDebugComment(
         "ResponsiveImageFilter: Not adding srcset because image already "
-        "has one.",
-        element);
+        "has one.", element);
   } else if (!element->HasAttribute(HtmlName::kDataPagespeedResponsiveTemp)) {
     // On first run of this filter, split <img> element into multiple
     // elements.
@@ -92,17 +94,15 @@ void ResponsiveImageFirstFilter::EndElementImpl(HtmlElement* element) {
 // ResponsiveImageFirstFilter.
 void ResponsiveImageFirstFilter::AddHiResImages(HtmlElement* element) {
   const HtmlElement::Attribute* src_attr =
-      element->FindAttribute(HtmlName::kSrc);
+    element->FindAttribute(HtmlName::kSrc);
   // TODO(sligocki): width and height attributes can lie. Perhaps we should
   // look at rendered image dimensions (via beaconing back from clients).
-  StringPiece width_str = element->AttributeValue(HtmlName::kWidth);
-  StringPiece height_str = element->AttributeValue(HtmlName::kHeight);
-  if ((src_attr == nullptr) || (width_str == nullptr) ||
-      (height_str == nullptr)) {
+  const char* width_str = element->AttributeValue(HtmlName::kWidth);
+  const char* height_str = element->AttributeValue(HtmlName::kHeight);
+  if ((src_attr == NULL) || (width_str == NULL) || (height_str == NULL)) {
     driver()->InsertDebugComment(
         "ResponsiveImageFilter: Not adding srcset because image does not "
-        "have dimensions (or a src URL).",
-        element);
+        "have dimensions (or a src URL).", element);
     return;
   }
 
@@ -130,9 +130,10 @@ void ResponsiveImageFirstFilter::AddHiResImages(HtmlElement* element) {
     }
 
     // Highest quality version.
-    virtual_images.inlinable_candidate = AddHiResVersion(
-        element, *src_attr, orig_width, orig_height, kInlinableVirtualImage,
-        densities_[densities_.size() - 1]);
+    virtual_images.inlinable_candidate =
+        AddHiResVersion(element, *src_attr, orig_width, orig_height,
+                        kInlinableVirtualImage,
+                        densities_[densities_.size() - 1]);
 
     virtual_images.fullsized_candidate =
         AddHiResVersion(element, *src_attr, orig_width, orig_height,
@@ -148,8 +149,8 @@ void ResponsiveImageFirstFilter::AddHiResImages(HtmlElement* element) {
 }
 
 ResponsiveImageCandidate ResponsiveImageFirstFilter::AddHiResVersion(
-    HtmlElement* img, const HtmlElement::Attribute& src_attr, int orig_width,
-    int orig_height, StringPiece responsive_attribute_value,
+    HtmlElement* img, const HtmlElement::Attribute& src_attr,
+    int orig_width, int orig_height, StringPiece responsive_attribute_value,
     double resolution) {
   HtmlElement* new_img = driver()->NewElement(img->parent(), HtmlName::kImg);
   new_img->AddAttribute(src_attr);
@@ -169,16 +170,18 @@ ResponsiveImageCandidate ResponsiveImageFirstFilter::AddHiResVersion(
 
 ResponsiveImageSecondFilter::ResponsiveImageSecondFilter(
     RewriteDriver* driver, const ResponsiveImageFirstFilter* first_filter)
-    : CommonFilter(driver),
-      responsive_js_url_(
-          driver->server_context()->static_asset_manager()->GetAssetUrl(
-              StaticAssetEnum::RESPONSIVE_JS, driver->options())),
-      first_filter_(first_filter),
-      zoom_filter_enabled_(
-          driver->options()->Enabled(RewriteOptions::kResponsiveImagesZoom)),
-      srcsets_added_(false) {}
+  : CommonFilter(driver),
+    responsive_js_url_(
+        driver->server_context()->static_asset_manager()->GetAssetUrl(
+            StaticAssetEnum::RESPONSIVE_JS, driver->options())),
+    first_filter_(first_filter),
+    zoom_filter_enabled_(driver->options()->Enabled(
+        RewriteOptions::kResponsiveImagesZoom)),
+    srcsets_added_(false) {
+}
 
-ResponsiveImageSecondFilter::~ResponsiveImageSecondFilter() {}
+ResponsiveImageSecondFilter::~ResponsiveImageSecondFilter() {
+}
 
 void ResponsiveImageSecondFilter::StartDocumentImpl() {
   srcsets_added_ = false;
@@ -207,14 +210,14 @@ ImageDim ActualDims(const HtmlElement* element) {
   ImageDim dims;
 
   int height;
-  StringPiece height_str = element->AttributeValue(HtmlName::kDataActualHeight);
-  if (height_str != nullptr && StringToInt(height_str, &height)) {
+  const char* height_str = element->AttributeValue(HtmlName::kDataActualHeight);
+  if (height_str != NULL && StringToInt(height_str, &height)) {
     dims.set_height(height);
   }
 
   int width;
-  StringPiece width_str = element->AttributeValue(HtmlName::kDataActualWidth);
-  if (width_str != nullptr && StringToInt(width_str, &width)) {
+  const char* width_str = element->AttributeValue(HtmlName::kDataActualWidth);
+  if (width_str != NULL && StringToInt(width_str, &width)) {
     dims.set_width(width);
   }
 
@@ -223,14 +226,15 @@ ImageDim ActualDims(const HtmlElement* element) {
 
 GoogleString ResolutionToString(double resolution) {
   // Max 4 digits of precission.
-  return absl::StrFormat("%.4g", resolution);
+  return StringPrintf("%.4g", resolution);
 }
 
 }  // namespace
 
 // Combines information from dummy 1.5x and 2x images into the 1x srcset.
 void ResponsiveImageSecondFilter::CombineHiResImages(
-    HtmlElement* orig_element, const ResponsiveVirtualImages& virtual_images) {
+    HtmlElement* orig_element,
+    const ResponsiveVirtualImages& virtual_images) {
   // If the highest resolution image was inlinable, use that as the only
   // version of the image (no srcset).
   const char* inlinable_src =
@@ -258,15 +262,14 @@ void ResponsiveImageSecondFilter::CombineHiResImages(
 
   const char* x1_src = orig_element->AttributeValue(HtmlName::kSrc);
 
-  if (x1_src == nullptr) {
+  if (x1_src == NULL) {
     // Should not happen. We explicitly checked that <img> had a decodeable
     // src= attribute in ResponsiveImageFirstFilter::AddHiResImages().
     LOG(DFATAL) << "Original responsive image has no decodeable URL: "
                 << orig_element->ToString();
     driver()->InsertDebugComment(
         "ResponsiveImageFilter: Not adding srcset because original image has "
-        "no src URL.",
-        orig_element);
+        "no src URL.", orig_element);
     return;
   } else if (IsDataUrl(x1_src)) {
     // Should not happen. ImageRewriteFilter should never inline the original
@@ -274,8 +277,7 @@ void ResponsiveImageSecondFilter::CombineHiResImages(
     // inlinable virtual image.
     driver()->InsertDebugComment(
         "ResponsiveImageFilter: Not adding srcset because original image was "
-        "inlined.",
-        orig_element);
+        "inlined.", orig_element);
     return;
   }
 
@@ -291,14 +293,13 @@ void ResponsiveImageSecondFilter::CombineHiResImages(
   for (int i = 0, n = candidates.size(); i < n; ++i) {
     const char* src = candidates[i].element->AttributeValue(HtmlName::kSrc);
 
-    if (src == nullptr) {
+    if (src == NULL) {
       // Should not happen. We explicitly created a src= attribute in
       // ResponsiveImageFirstFilter::AddHiResVersion().
       LOG(DFATAL) << "Virtual responsive image has no URL.";
       driver()->InsertDebugComment(
           "ResponsiveImageFilter: Not adding srcset because virtual image has "
-          "no src URL.",
-          orig_element);
+          "no src URL.", orig_element);
       return;
     } else if (IsDataUrl(src)) {
       // Should not happen. ImageRewriteFilter should never inline these
@@ -306,34 +307,30 @@ void ResponsiveImageSecondFilter::CombineHiResImages(
       LOG(DFATAL) << "Non-inlinable image was inlined.";
       driver()->InsertDebugComment(
           "ResponsiveImageFilter: Not adding srcset because virtual image was "
-          "unexpectedly inlined.",
-          orig_element);
+          "unexpectedly inlined.", orig_element);
       return;
     }
 
     ImageDim dims = ActualDims(candidates[i].element);
     if (src == last_src) {
       if (driver()->DebugMode()) {
-        driver()->InsertDebugComment(
-            StrCat("ResponsiveImageFilter: Not adding ",
-                   ResolutionToString(candidates[i].resolution),
-                   "x candidate to "
-                   "srcset because it is the same as previous candidate."),
-            orig_element);
+        driver()->InsertDebugComment(StrCat(
+            "ResponsiveImageFilter: Not adding ",
+            ResolutionToString(candidates[i].resolution), "x candidate to "
+            "srcset because it is the same as previous candidate."),
+                                     orig_element);
       }
-      // TODO(sligocki): Remove last candidate if dimensions are too close to
-      // this candidate. Ex: if 1.5x is 99x99 and 2x is 100x100, obviously we
-      // should remove 1.5x version.
+    // TODO(sligocki): Remove last candidate if dimensions are too close to
+    // this candidate. Ex: if 1.5x is 99x99 and 2x is 100x100, obviously we
+    // should remove 1.5x version.
     } else if (dims.height() == last_dims.height() &&
                dims.width() == last_dims.width()) {
       if (driver()->DebugMode()) {
-        driver()->InsertDebugComment(
-            StrCat(
-                "ResponsiveImageFilter: Not adding ",
-                ResolutionToString(candidates[i].resolution),
-                "x candidate to "
-                "srcset because native image was not high enough resolution."),
-            orig_element);
+        driver()->InsertDebugComment(StrCat(
+            "ResponsiveImageFilter: Not adding ",
+            ResolutionToString(candidates[i].resolution), "x candidate to "
+            "srcset because native image was not high enough resolution."),
+                                     orig_element);
       }
     } else {
       if (added_hi_res) {
@@ -345,18 +342,15 @@ void ResponsiveImageSecondFilter::CombineHiResImages(
       // need to be escaped. In fact, they are reserved chars in the URL spec
       // (rfc 3986 2.2) and so escaping them as %2C would potentially change
       // the meaning of the URL.
-      // See:
-      // http://www.w3.org/html/wg/drafts/html/master/semantics.html#attr-img-srcset
+      // See: http://www.w3.org/html/wg/drafts/html/master/semantics.html#attr-img-srcset
       //
       // Note: PageSpeed resized images will never begin nor end with a comma.
       StringPiece src_sp(src);
       if (src_sp.ends_with(",") || src_sp.starts_with(",")) {
-        driver()->InsertDebugComment(
-            StrCat(
-                "ResponsiveImageFilter: Not adding srcset because one of the "
-                "candidate URLs starts or ends with a comma: ",
-                src_sp),
-            orig_element);
+        driver()->InsertDebugComment(StrCat(
+            "ResponsiveImageFilter: Not adding srcset because one of the "
+            "candidate URLs starts or ends with a comma: ", src_sp),
+                                     orig_element);
         return;
       }
       // However it appears that all spaces do need to be percent escaped.
@@ -386,7 +380,7 @@ namespace {
 const char* AttributeValueOrEmpty(const HtmlElement* element,
                                   const HtmlName::Keyword attr_name) {
   const char* ret = element->AttributeValue(attr_name);
-  if (ret == nullptr) {
+  if (ret == NULL) {
     return "";
   } else {
     return ret;
@@ -403,25 +397,22 @@ void ResponsiveImageSecondFilter::InsertPlaceholderDebugComment(
       resolution_str =
           StrCat(" ", ResolutionToString(candidate.resolution), "x");
     }
-    driver()->InsertDebugComment(
-        StrCat(
-            "ResponsiveImageFilter: Any debug messages after this refer to the "
-            "virtual",
-            qualifier, resolution_str,
-            " image with "
-            "src=",
-            AttributeValueOrEmpty(candidate.element, HtmlName::kSrc), " width=",
-            AttributeValueOrEmpty(candidate.element, HtmlName::kWidth),
-            " height=",
-            AttributeValueOrEmpty(candidate.element, HtmlName::kHeight)),
-        candidate.element);
+    driver()->InsertDebugComment(StrCat(
+        "ResponsiveImageFilter: Any debug messages after this refer to the "
+        "virtual", qualifier, resolution_str, " image with "
+        "src=", AttributeValueOrEmpty(candidate.element, HtmlName::kSrc),
+        " width=", AttributeValueOrEmpty(candidate.element, HtmlName::kWidth),
+        " height=", AttributeValueOrEmpty(candidate.element,
+                                          HtmlName::kHeight)),
+                                 candidate.element);
   }
 }
 
 void ResponsiveImageSecondFilter::Cleanup(
-    HtmlElement* orig_element, const ResponsiveVirtualImages& virtual_images) {
-  for (int i = 0, n = virtual_images.non_inlinable_candidates.size(); i < n;
-       ++i) {
+    HtmlElement* orig_element,
+    const ResponsiveVirtualImages& virtual_images) {
+  for (int i = 0, n = virtual_images.non_inlinable_candidates.size();
+       i < n; ++i) {
     InsertPlaceholderDebugComment(virtual_images.non_inlinable_candidates[i],
                                   "");
     driver()->DeleteNode(virtual_images.non_inlinable_candidates[i].element);
@@ -442,17 +433,16 @@ void ResponsiveImageSecondFilter::Cleanup(
 
 void ResponsiveImageSecondFilter::EndDocument() {
   if (zoom_filter_enabled_ && srcsets_added_ && !driver()->is_amp_document()) {
-    if (IsRelativeUrlLoadPermittedByCsp(responsive_js_url_,
-                                        CspDirective::kScriptSrc)) {
+    if (IsRelativeUrlLoadPermittedByCsp(
+            responsive_js_url_, CspDirective::kScriptSrc)) {
       HtmlElement* script = driver()->NewElement(nullptr, HtmlName::kScript);
       driver()->AddAttribute(script, HtmlName::kSrc, responsive_js_url_);
       InsertNodeAtBodyEnd(script);
     } else if (DebugMode()) {
       HtmlNode* comment_node = driver()->NewCommentNode(
-          nullptr,
-          "ResponsiveImageFilter: cannot insert zoom JS as "
-          "Content-Security-Policy would disallow it");
-      InsertNodeAtBodyEnd(comment_node);
+          nullptr, "ResponsiveImageFilter: cannot insert zoom JS as "
+                   "Content-Security-Policy would disallow it");
+       InsertNodeAtBodyEnd(comment_node);
     }
   }
 }

@@ -17,17 +17,19 @@
  * under the License.
  */
 
-#include "third_party/css_parser/src/webutil/css/tostring.h"
+
+
+#include "webutil/css/tostring.h"
 
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_format.h"
-#include "third_party/css_parser/src/strings/join.h"
-#include "third_party/css_parser/src/strings/strutil.h"
-#include "third_party/css_parser/src/webutil/css/parser.h"
-#include "third_party/css_parser/src/webutil/css/string.h"
-#include "third_party/css_parser/src/webutil/css/string_util.h"
+#include "base/stringprintf.h"
+#include "strings/join.h"
+#include "strings/strutil.h"
+#include "webutil/css/parser.h"
+#include "webutil/css/string.h"
+#include "webutil/css/string_util.h"
 
 class UnicodeText;
 
@@ -47,19 +49,12 @@ bool IsUrlSafe(char c) {
   if (c >= 0x21 && c <= 0x7e) {
     switch (c) {
       // SPACE, " and ' specifically disallowed.
-      case ' ':
-      case '"':
-      case '\'':
+      case ' ': case '"': case '\'':
       // Backslash clearly needs to be escaped.
       case '\\':
       // Parentheses generally need to be matched correctly, so we escape
       // them too, just to be safe.
-      case '(':
-      case ')':
-      case '{':
-      case '}':
-      case '[':
-      case ']':
+      case '(': case ')': case '{': case '}': case '[': case ']':
         return false;
       default:
         // All other printable chars are allowed.
@@ -96,8 +91,11 @@ bool IsIdentSafe(char c) {
   //   ident    ::=  '-'? nmstart nmchar*
   //   nmstart  ::=  [a-zA-Z] | '_' | nonascii | escape
   //   nmchar   ::=  [a-zA-Z0-9] | '-' | '_' | nonascii | escape
-  return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-          (c >= '0' && c <= '9') || c == '-' || c == '_' || !IsAscii(c));
+  return ((c >= 'A' && c <= 'Z') ||
+          (c >= 'a' && c <= 'z') ||
+          (c >= '0' && c <= '9') ||
+          c == '-' || c == '_' ||
+          !IsAscii(c));
 }
 
 // Escape an ASCII char and append it to dest.
@@ -141,7 +139,7 @@ void AppendEscapedAsciiChar(char c, string* dest) {
 
 }  // namespace
 
-string EscapeString(CssStringPiece src) {
+string EscapeString(StringPiece src) {
   string dest;
   dest.reserve(src.size());  // Minimum possible expansion
 
@@ -158,10 +156,10 @@ string EscapeString(CssStringPiece src) {
 }
 
 string EscapeString(const UnicodeText& src) {
-  return EscapeString(CssStringPiece(src.utf8_data(), src.utf8_length()));
+  return EscapeString(StringPiece(src.utf8_data(), src.utf8_length()));
 }
 
-string EscapeUrl(CssStringPiece src) {
+string EscapeUrl(StringPiece src) {
   string dest;
   dest.reserve(src.size());  // Minimum possible expansion
 
@@ -178,10 +176,10 @@ string EscapeUrl(CssStringPiece src) {
 }
 
 string EscapeUrl(const UnicodeText& src) {
-  return EscapeUrl(CssStringPiece(src.utf8_data(), src.utf8_length()));
+  return EscapeUrl(StringPiece(src.utf8_data(), src.utf8_length()));
 }
 
-string EscapeIdentifier(CssStringPiece src) {
+string EscapeIdentifier(StringPiece src) {
   string dest;
   dest.reserve(src.size());  // Minimum possible expansion
 
@@ -201,7 +199,7 @@ string EscapeIdentifier(CssStringPiece src) {
 
 string EscapeIdentifier(const UnicodeText& text) {
   // TODO(sligocki): Should we Unicode escape all non-ASCII symbols?
-  return EscapeIdentifier(CssStringPiece(text.utf8_data(), text.utf8_length()));
+  return EscapeIdentifier(StringPiece(text.utf8_data(), text.utf8_length()));
 }
 
 template <typename Container>
@@ -217,12 +215,9 @@ static string JoinElementStrings(const Container& c, const char* delim) {
 
 static string StylesheetTypeString(Stylesheet::StylesheetType type) {
   switch (type) {
-    case Stylesheet::AUTHOR:
-      return string("AUTHOR");
-    case Stylesheet::USER:
-      return string("USER");
-    case Stylesheet::SYSTEM:
-      return string("SYSTEM");
+    case Stylesheet::AUTHOR: return string("AUTHOR");
+    case Stylesheet::USER:   return string("USER");
+    case Stylesheet::SYSTEM: return string("SYSTEM");
   }
   LOG(FATAL) << "Invalid type";
 }
@@ -230,26 +225,27 @@ static string StylesheetTypeString(Stylesheet::StylesheetType type) {
 string Value::ToString() const {
   switch (GetLexicalUnitType()) {
     case NUMBER:
-      return absl::StrFormat("%g%s", GetFloatValue(),
-                             GetDimensionUnitText().c_str());
+      return StringPrintf("%g%s",
+                          GetFloatValue(),
+                          GetDimensionUnitText().c_str());
     case URI:
-      return absl::StrFormat("url(%s)",
-                             Css::EscapeUrl(GetStringValue()).c_str());
+      return StringPrintf("url(%s)",
+                          Css::EscapeUrl(GetStringValue()).c_str());
     case FUNCTION:
-      return absl::StrFormat("%s(%s)",
-                             Css::EscapeIdentifier(GetFunctionName()).c_str(),
-                             GetParametersWithSeparators()->ToString().c_str());
+      return StringPrintf("%s(%s)",
+                          Css::EscapeIdentifier(GetFunctionName()).c_str(),
+                          GetParametersWithSeparators()->ToString().c_str());
     case RECT:
-      return absl::StrFormat("rect(%s)",
-                             GetParametersWithSeparators()->ToString().c_str());
+      return StringPrintf("rect(%s)",
+                          GetParametersWithSeparators()->ToString().c_str());
     case COLOR:
       if (GetColorValue().IsDefined())
         return GetColorValue().ToString();
       else
         return "bad";
     case STRING:
-      return absl::StrFormat("\"%s\"",
-                             Css::EscapeString(GetStringValue()).c_str());
+      return StringPrintf("\"%s\"",
+                          Css::EscapeString(GetStringValue()).c_str());
     case IDENT:
       return Css::EscapeIdentifier(GetIdentifierText());
     case COMMA:
@@ -262,7 +258,9 @@ string Value::ToString() const {
   LOG(FATAL) << "Invalid type";
 }
 
-string Values::ToString() const { return JoinElementStrings(*this, " "); }
+string Values::ToString() const {
+  return JoinElementStrings(*this, " ");
+}
 
 string FunctionParameters::ToString() const {
   string ret;
@@ -290,49 +288,51 @@ string SimpleSelector::ToString() const {
     case UNIVERSAL:
       return "*";
     case EXIST_ATTRIBUTE:
-      return absl::StrFormat("[%s]",
-                             Css::EscapeIdentifier(attribute()).c_str());
+      return StringPrintf("[%s]",
+                          Css::EscapeIdentifier(attribute()).c_str());
     case EXACT_ATTRIBUTE:
       // TODO(sligocki): Maybe print value out as identifier if that's smaller.
       // The value here (and below) can be either a string or identifier.
       // We currently always print it as a string because that is easier and
       // more failsafe (note for example that [height="1"] would need to be
       // converted to [height=\49 ] to remain an identifier :/).
-      return absl::StrFormat("[%s=\"%s\"]",
-                             Css::EscapeIdentifier(attribute()).c_str(),
-                             Css::EscapeString(value()).c_str());
+      return StringPrintf("[%s=\"%s\"]",
+                          Css::EscapeIdentifier(attribute()).c_str(),
+                          Css::EscapeString(value()).c_str());
     case ONE_OF_ATTRIBUTE:
-      return absl::StrFormat("[%s~=\"%s\"]",
-                             Css::EscapeIdentifier(attribute()).c_str(),
-                             Css::EscapeString(value()).c_str());
+      return StringPrintf("[%s~=\"%s\"]",
+                          Css::EscapeIdentifier(attribute()).c_str(),
+                          Css::EscapeString(value()).c_str());
     case BEGIN_HYPHEN_ATTRIBUTE:
-      return absl::StrFormat("[%s|=\"%s\"]",
-                             Css::EscapeIdentifier(attribute()).c_str(),
-                             Css::EscapeString(value()).c_str());
+      return StringPrintf("[%s|=\"%s\"]",
+                          Css::EscapeIdentifier(attribute()).c_str(),
+                          Css::EscapeString(value()).c_str());
     case SUBSTRING_ATTRIBUTE:
-      return absl::StrFormat("[%s*=\"%s\"]",
-                             Css::EscapeIdentifier(attribute()).c_str(),
-                             Css::EscapeString(value()).c_str());
+      return StringPrintf("[%s*=\"%s\"]",
+                          Css::EscapeIdentifier(attribute()).c_str(),
+                          Css::EscapeString(value()).c_str());
     case BEGIN_WITH_ATTRIBUTE:
-      return absl::StrFormat("[%s^=\"%s\"]",
-                             Css::EscapeIdentifier(attribute()).c_str(),
-                             Css::EscapeString(value()).c_str());
+      return StringPrintf("[%s^=\"%s\"]",
+                          Css::EscapeIdentifier(attribute()).c_str(),
+                          Css::EscapeString(value()).c_str());
     case END_WITH_ATTRIBUTE:
-      return absl::StrFormat("[%s$=\"%s\"]",
-                             Css::EscapeIdentifier(attribute()).c_str(),
-                             Css::EscapeString(value()).c_str());
+      return StringPrintf("[%s$=\"%s\"]",
+                          Css::EscapeIdentifier(attribute()).c_str(),
+                          Css::EscapeString(value()).c_str());
     case CLASS:
-      return absl::StrFormat(".%s", Css::EscapeIdentifier(value()).c_str());
+      return StringPrintf(".%s",
+                          Css::EscapeIdentifier(value()).c_str());
     case ID:
-      return absl::StrFormat("#%s", Css::EscapeIdentifier(value()).c_str());
+      return StringPrintf("#%s",
+                          Css::EscapeIdentifier(value()).c_str());
     case PSEUDOCLASS:
-      return absl::StrFormat("%s%s",
-                             // pseudoclass_separator() is either ":" or "::".
-                             UnicodeTextToUTF8(pseudoclass_separator()).c_str(),
-                             Css::EscapeIdentifier(pseudoclass()).c_str());
+      return StringPrintf("%s%s",
+                          // pseudoclass_separator() is either ":" or "::".
+                          UnicodeTextToUTF8(pseudoclass_separator()).c_str(),
+                          Css::EscapeIdentifier(pseudoclass()).c_str());
     case LANG:
-      return absl::StrFormat(":lang(%s)",
-                             Css::EscapeIdentifier(lang()).c_str());
+      return StringPrintf(":lang(%s)",
+                          Css::EscapeIdentifier(lang()).c_str());
   }
   LOG(FATAL) << "Invalid type";
 }
@@ -353,13 +353,14 @@ string SimpleSelectors::ToString() const {
   return prefix + JoinElementStrings(*this, "");
 }
 
-string Selector::ToString() const { return JoinElementStrings(*this, " "); }
+string Selector::ToString() const {
+  return JoinElementStrings(*this, " ");
+}
 
 string Selectors::ToString() const {
   if (is_dummy()) {
     string result = "/* Unparsed selectors: */ ";
-    result.append(bytes_in_original_buffer().data(),
-                  bytes_in_original_buffer().size());
+    bytes_in_original_buffer().AppendToString(&result);
     return result;
   } else {
     return JoinElementStrings(*this, ", ");
@@ -371,8 +372,7 @@ string Declaration::ToString() const {
   switch (prop()) {
     case Property::UNPARSEABLE:
       result = "/* Unparsed declaration: */ ";
-      result.append(bytes_in_original_buffer().data(),
-                    bytes_in_original_buffer().size());
+      bytes_in_original_buffer().AppendToString(&result);
       return result;
       break;
     case Property::FONT_FAMILY:
@@ -403,7 +403,8 @@ string Declaration::ToString() const {
       result += values()->ToString();
       break;
   }
-  if (IsImportant()) result += " !important";
+  if (IsImportant())
+    result += " !important";
   return result;
 }
 
@@ -413,8 +414,7 @@ string Declarations::ToString() const {
 
 string UnparsedRegion::ToString() const {
   string result = "/* Unparsed region: */ ";
-  result.append(bytes_in_original_buffer().data(),
-                bytes_in_original_buffer().size());
+  bytes_in_original_buffer().AppendToString(&result);
   return result;
 }
 
@@ -459,8 +459,7 @@ string MediaQueries::ToString() const {
 string Ruleset::ToString() const {
   string result;
   if (!media_queries().empty())
-    result +=
-        absl::StrFormat("@media %s { ", media_queries().ToString().c_str());
+    result += StringPrintf("@media %s { ", media_queries().ToString().c_str());
   switch (type()) {
     case RULESET:
       result += selectors().ToString() + " {" + declarations().ToString() + "}";
@@ -469,32 +468,33 @@ string Ruleset::ToString() const {
       result = unparsed_region()->ToString();
       break;
   }
-  if (!media_queries().empty()) result += " }";
+  if (!media_queries().empty())
+    result += " }";
   return result;
 }
 
 string Charsets::ToString() const {
   string result;
   for (const_iterator iter = begin(); iter != end(); ++iter) {
-    result +=
-        absl::StrFormat("@charset \"%s\";", Css::EscapeString(*iter).c_str());
+    result += StringPrintf("@charset \"%s\";",
+                           Css::EscapeString(*iter).c_str());
   }
   return result;
 }
 
 string Import::ToString() const {
-  return absl::StrFormat("@import url(\"%s\") %s;",
-                         Css::EscapeUrl(link()).c_str(),
-                         media_queries().ToString().c_str());
+  return StringPrintf("@import url(\"%s\") %s;",
+                      Css::EscapeUrl(link()).c_str(),
+                      media_queries().ToString().c_str());
 }
 
 string FontFace::ToString() const {
   string result;
   if (!media_queries().empty())
-    result +=
-        absl::StrFormat("@media %s { ", media_queries().ToString().c_str());
+    result += StringPrintf("@media %s { ", media_queries().ToString().c_str());
   result += "@font-face { " + declarations().ToString() + " }";
-  if (!media_queries().empty()) result += " }";
+  if (!media_queries().empty())
+    result += " }";
   return result;
 }
 
