@@ -19,6 +19,9 @@
 
 #pragma once
 #include <inttypes.h>
+#include <memory>
+#include <type_traits>
+#include <utility>
 
 typedef int64_t int64;
 typedef uint64_t uint64;
@@ -26,6 +29,21 @@ typedef uint32_t uint32;
 typedef int32_t int32;
 typedef uint8_t uint8;
 typedef int8_t int8;
+
+#if __cplusplus < 201402L
+namespace std {
+template <class T, class... Args>
+inline unique_ptr<T> make_unique(Args&&... args) {
+  return unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+template <class T>
+inline unique_ptr<T> make_unique(size_t n) {
+  typedef typename std::remove_extent<T>::type Element;
+  return unique_ptr<T>(new Element[n]());
+}
+}  // namespace std
+#endif
 
 #define arraysize(a)            \
   ((sizeof(a) / sizeof(*(a))) / \

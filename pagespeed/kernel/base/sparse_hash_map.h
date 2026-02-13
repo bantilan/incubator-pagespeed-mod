@@ -20,6 +20,8 @@
 #ifndef PAGESPEED_KERNEL_BASE_SPARSE_HASH_MAP_H_
 #define PAGESPEED_KERNEL_BASE_SPARSE_HASH_MAP_H_
 
+#include <cstring>
+
 #include "google/sparse_hash_map"
 namespace net_instaweb {
 using google::sparse_hash_map;

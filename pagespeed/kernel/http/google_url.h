@@ -28,11 +28,27 @@
 #include "pagespeed/kernel/base/string.h"
 #include "pagespeed/kernel/base/string_util.h"
 
-class GURL;
+
+#include "third_party/chromium/src/googleurl/src/gurl.h"
+#include "third_party/chromium/src/googleurl/src/url_parse.h"
+#include "third_party/chromium/src/googleurl/src/url_util.h"
 
 namespace net_instaweb {
 
 // Prepare for flattening of the namespaces in newer Chromiums.
+
+namespace url {
+
+using url_canon::Replacements;
+using url_parse::PORT_UNSPECIFIED;
+using url_parse::PORT_INVALID;
+using url_parse::Component;
+using url_parse::Parsed;
+using url_util::Initialize;
+using url_util::Shutdown;
+
+};  // namespace url
+
 
 enum UrlRelativity {
   kAbsoluteUrl,   // http://example.com/foo/bar/file.ext?k=v#f
@@ -52,7 +68,6 @@ class GoogleUrl {
   GoogleUrl(const GoogleUrl& base, StringPiece relative);
   GoogleUrl(const GoogleUrl& base, const char* relative);
   GoogleUrl();
-  ~GoogleUrl();
 
   void Swap(GoogleUrl* google_url);
 
@@ -82,8 +97,8 @@ class GoogleUrl {
                                   StringPiece unescaped_value) const;
   // Same as CopyAndAddQueryParam() but name and value must already be escaped.
   // Most users should use CopyAndAddQueryParam() instead for safety.
-  GoogleUrl* CopyAndAddEscapedQueryParam(StringPiece escaped_name,
-                                         StringPiece escaped_value) const;
+  GoogleUrl* CopyAndAddEscapedQueryParam(
+      StringPiece escaped_name, StringPiece escaped_value) const;
 
   // For "http://a.com/b/c/d?e=f/g#r" returns "http://a.com/b/c/d"
   // Returns a StringPiece, only valid for the lifetime of this object.
@@ -156,31 +171,37 @@ class GoogleUrl {
   // It is illegal to call this for invalid urls (check IsWebValid() first).
   StringPiece Spec() const;
 
-  // Returns gurl_->spec_ without checking to see if it's valid or empty.
+  // Returns gurl_.spec_ without checking to see if it's valid or empty.
   StringPiece UncheckedSpec() const;
 
   // This method is primarily for printf purposes.
-  const char* spec_c_str() const;
+  const char* spec_c_str() const {
+    return gurl_.possibly_invalid_spec().c_str();
+  }
 
-  int IntPort() const;
+  int IntPort() const { return gurl_.IntPort(); }
 
   // Returns the effective port number, which is dependent on the scheme.
-  int EffectiveIntPort() const;
+  int EffectiveIntPort() const { return gurl_.EffectiveIntPort(); }
 
   // Returns the default port for given scheme, or url::PORT_UNSPECIFIED
   // if the scheme isn't recognized. Scheme is expected to be in lowercase.
   static int DefaultPortForScheme(StringPiece scheme);
 
-  bool is_empty() const;
-  bool has_scheme() const;
-  bool has_path() const;
-  bool has_query() const;
+  bool is_empty() const { return gurl_.is_empty(); }
+  bool has_scheme() const { return gurl_.has_scheme(); }
+  bool has_path() const { return gurl_.has_path(); }
+  bool has_query() const { return gurl_.has_query(); }
 
-  bool SchemeIs(const char* lower_ascii_scheme) const;
+  bool SchemeIs(const char* lower_ascii_scheme) const {
+    return gurl_.SchemeIs(lower_ascii_scheme);
+  }
 
   // TODO(nforman): get GURL to take a StringPiece so we don't have to do
   // any copying.
-  bool SchemeIs(StringPiece lower_ascii_scheme) const;
+  bool SchemeIs(StringPiece lower_ascii_scheme) const {
+    return gurl_.SchemeIs(lower_ascii_scheme.as_string().c_str());
+  }
 
   // Find out how relative the URL string is.
   static UrlRelativity FindRelativity(StringPiece url);
@@ -194,8 +215,12 @@ class GoogleUrl {
                          const GoogleUrl& base_url) const;
 
   // Defiant equality operator!
-  bool operator==(const GoogleUrl& other) const;
-  bool operator!=(const GoogleUrl& other) const;
+  bool operator==(const GoogleUrl& other) const {
+    return gurl_ == other.gurl_;
+  }
+  bool operator!=(const GoogleUrl& other) const {
+    return gurl_ != other.gurl_;
+  }
 
   // Unescape a query parameter, converting all %XX to the the actual char 0xXX.
   // This also converts '+' to ' ' which is valid only in query parameters.
@@ -234,9 +259,6 @@ class GoogleUrl {
   // what's in %-encoded form and what isn't as GoogleUrl does.
   static GoogleString CanonicalizePath(StringPiece path);
 
-  static bool isPortGurlUnspecified(int port);
-  static int getGurlUnspecifiedPortNumber();
-
  private:
   // Returned by *Position methods when that position is not well-defined.
   static const size_t npos;
@@ -258,15 +280,15 @@ class GoogleUrl {
 
   // Resolves a URL against a base. Returns whether the resolution worked.
   inline bool ResolveHelper(const GURL& base, const std::string& path_and_leaf);
-  void setGurlInternal(GURL* gurl);
 
-  GURL* gurl_{nullptr};
-  bool is_web_valid_{false};
-  bool is_web_or_data_valid_{false};
+  GURL gurl_;
+  bool is_web_valid_;
+  bool is_web_or_data_valid_;
 
   DISALLOW_COPY_AND_ASSIGN(GoogleUrl);
 };  // class GoogleUrl
 
 }  // namespace net_instaweb
+
 
 #endif  // PAGESPEED_KERNEL_HTTP_GOOGLE_URL_H_
