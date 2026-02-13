@@ -1,0 +1,3 @@
+#ifndef APR_PRIVATE_COMMON_H
+#define APR_PRIVATE_COMMON_H
+#endif
