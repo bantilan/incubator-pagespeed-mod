@@ -92,7 +92,7 @@ bool CssAbsolutify::AbsolutifyUrls(Css::Stylesheet* stylesheet,
           Css::Selectors& selectors(ruleset->mutable_selectors());
           if (selectors.is_dummy()) {
             // XXX(oschaaf): css
-            CssStringPiece tmp = selectors.bytes_in_original_buffer();
+            StringPiece tmp = selectors.bytes_in_original_buffer();
             StringPiece original_bytes(tmp.data(), tmp.size());
             GoogleString rewritten_bytes;
             StringWriter writer(&rewritten_bytes);
@@ -107,7 +107,7 @@ bool CssAbsolutify::AbsolutifyUrls(Css::Stylesheet* stylesheet,
         case Css::Ruleset::UNPARSED_REGION: {
           Css::UnparsedRegion* unparsed = ruleset->mutable_unparsed_region();
           // XXX(oschaaf): css
-          CssStringPiece tmp = unparsed->bytes_in_original_buffer();
+          StringPiece tmp = unparsed->bytes_in_original_buffer();
           StringPiece original_bytes(tmp.data(), tmp.size());
           GoogleString rewritten_bytes;
           StringWriter writer(&rewritten_bytes);
@@ -143,7 +143,7 @@ bool CssAbsolutify::AbsolutifyDeclarations(
     if (decl->prop() == Css::Property::UNPARSEABLE) {
       if (handle_unparseable_sections) {
         // XXX(oschaaf): css
-        CssStringPiece tmp = decl->bytes_in_original_buffer();
+        StringPiece tmp = decl->bytes_in_original_buffer();
         StringPiece original_bytes(tmp.data(), tmp.size());
         GoogleString rewritten_bytes;
         StringWriter writer(&rewritten_bytes);

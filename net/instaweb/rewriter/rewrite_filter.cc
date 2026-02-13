@@ -92,7 +92,7 @@ GoogleString RewriteFilter::GetCharsetForStylesheet(
   // 2. If the stylesheet has an initial @charset, use that.
   StringPiece css(stylesheet->ExtractUncompressedContents());
   StripUtf8Bom(&css);
-  CssStringPiece tmp(css.data(), css.size());
+  StringPiece tmp(css.data(), css.size());
   Css::Parser parser(tmp);
   UnicodeText css_charset = parser.ExtractCharset();
   if (parser.errors_seen_mask() == 0) {

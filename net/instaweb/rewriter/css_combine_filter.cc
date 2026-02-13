@@ -79,7 +79,7 @@ class CssCombineFilter::CssCombiner : public ResourceCombiner {
 
   bool CleanParse(const StringPiece& contents) {
     // XXX(oschaaf): css
-    CssStringPiece tmp(contents.data(), contents.size());
+    StringPiece tmp(contents.data(), contents.size());
     Css::Parser parser(tmp);
     parser.set_preservation_mode(true);
     // Among other issues, quirks-mode allows unbalanced {}s in some cases.

@@ -225,7 +225,7 @@ bool CssHierarchy::Parse() {
   bool result = true;
   if (stylesheet_.get() == nullptr) {
     // XXX(oschaaf): css
-    CssStringPiece tmp(input_contents_.data(), input_contents_.size());
+    StringPiece tmp(input_contents_.data(), input_contents_.size());
     Css::Parser parser(tmp);
     parser.set_preservation_mode(true);
     parser.set_quirks_mode(false);

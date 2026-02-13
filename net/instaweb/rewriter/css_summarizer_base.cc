@@ -202,7 +202,7 @@ void CssSummarizerBase::Context::RewriteSingle(
   // Load stylesheet w/o expanding background attributes and preserving as
   // much content as possible from the original document.
   // XXX(oschaaf): css
-  CssStringPiece tmp(input_contents.data(), input_contents.size());
+  StringPiece tmp(input_contents.data(), input_contents.size());
   Css::Parser parser(tmp);
   // Css::Parser parser(input_contents);
   parser.set_preservation_mode(true);
