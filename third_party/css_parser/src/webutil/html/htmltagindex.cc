@@ -130,7 +130,7 @@ int HtmlTagIndex::AddHtmlTag(const char* tag, int length) {
 
   // Add to the custom table.
   if (custom_tag_map_.get() == nullptr) {
-    custom_tag_map_ = std::make_unique<CustomTagMap>();
+    custom_tag_map_.reset(new CustomTagMap());
     custom_tag_map_->set_empty_key(string(""));
   }
   string tag_copy(CaseAwareString(case_sensitive_, tag, length));
