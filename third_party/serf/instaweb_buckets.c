@@ -576,11 +576,20 @@ static void log_time()
             tm.tm_gmtoff/3600);
 }
 
+#if defined(SERF_VERSION_AT_LEAST) && SERF_VERSION_AT_LEAST(1, 4, 0)
+void serf__log(apr_uint32_t level, apr_uint32_t comp, const char *filename,
+               serf_config_t *config, const char *fmt, ...)
+#else
 void serf__log(int verbose_flag, const char *filename, const char *fmt, ...)
+#endif
 {
     va_list argp;
 
+#if defined(SERF_VERSION_AT_LEAST) && SERF_VERSION_AT_LEAST(1, 4, 0)
+    if (serf__log_enabled(level, comp, config)) {
+#else
     if (verbose_flag) {
+#endif
         log_time();
 
         if (filename)
@@ -592,11 +601,20 @@ void serf__log(int verbose_flag, const char *filename, const char *fmt, ...)
     }
 }
 
+#if defined(SERF_VERSION_AT_LEAST) && SERF_VERSION_AT_LEAST(1, 4, 0)
+void serf__log_nopref(apr_uint32_t level, apr_uint32_t comp,
+                      serf_config_t *config, const char *fmt, ...)
+#else
 void serf__log_nopref(int verbose_flag, const char *fmt, ...)
+#endif
 {
     va_list argp;
 
+#if defined(SERF_VERSION_AT_LEAST) && SERF_VERSION_AT_LEAST(1, 4, 0)
+    if (serf__log_enabled(level, comp, config)) {
+#else
     if (verbose_flag) {
+#endif
         va_start(argp, fmt);
         vfprintf(stderr, fmt, argp);
         va_end(argp);
@@ -629,4 +647,3 @@ void serf__log_skt(int verbose_flag, const char *filename, apr_socket_t *skt,
         va_end(argp);
     }
 }
-

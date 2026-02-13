@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 // TODO(jmarantz): Avoid initiating fetches for resources already in flight.
 // The challenge is that we would want to call all the callbacks that indicated
 // interest in a particular URL once the callback completed.  Alternatively,
@@ -26,19 +27,18 @@
 
 #include <cstddef>
 #include <list>
-#include <memory>
 #include <vector>
 
 #include "apr.h"
 #include "apr_network_io.h"
-#include "apr_pools.h"
 #include "apr_strings.h"
+#include "apr_pools.h"
 #include "apr_thread_proc.h"
 #include "base/logging.h"
 #include "net/instaweb/http/public/async_fetch.h"
 #include "net/instaweb/public/global_constants.h"
 #include "net/instaweb/public/version.h"
-//#include "strings/stringpiece_utils.h"
+#include "strings/stringpiece_utils.h"
 #include "pagespeed/kernel/base/abstract_mutex.h"
 #include "pagespeed/kernel/base/basictypes.h"
 #include "pagespeed/kernel/base/condvar.h"
@@ -62,10 +62,10 @@
 namespace {
 
 enum HttpsOptions {
-  kEnableHttps = 1 << 0,
-  kAllowSelfSigned = 1 << 1,
-  kAllowUnknownCertificateAuthority = 1 << 2,
-  kAllowCertificateNotYetValid = 1 << 3,
+  kEnableHttps                          = 1 << 0,
+  kAllowSelfSigned                      = 1 << 1,
+  kAllowUnknownCertificateAuthority     = 1 << 2,
+  kAllowCertificateNotYetValid          = 1 << 3,
 };
 
 const int kReliabilityCheckPeriodMs = 30 * net_instaweb::Timer::kMinuteMs;
@@ -74,20 +74,23 @@ const int kReliabilityCheckMinFetches = 5;
 }  // namespace
 
 extern "C" {
-// Declares new functions added to
-// src/third_party/serf/instaweb_context.c
+  // Declares new functions added to
+  // src/third_party/serf/instaweb_context.c
 serf_bucket_t* serf_request_bucket_request_create_for_host(
-    serf_request_t* request, const char* method, const char* uri,
-    serf_bucket_t* body, serf_bucket_alloc_t* allocator, const char* host);
+    serf_request_t *request,
+    const char *method,
+    const char *uri,
+    serf_bucket_t *body,
+    serf_bucket_alloc_t *allocator, const char* host);
 
 int serf_connection_is_in_error_state(serf_connection_t* connection);
 
-// Declares new functions added in instaweb_ssl_buckets.c
-apr_status_t serf_ssl_set_certificates_directory(serf_ssl_context_t* ssl_ctx,
+  // Declares new functions added in instaweb_ssl_buckets.c
+apr_status_t serf_ssl_set_certificates_directory(serf_ssl_context_t *ssl_ctx,
                                                  const char* path);
-apr_status_t serf_ssl_set_certificates_file(serf_ssl_context_t* ssl_ctx,
+apr_status_t serf_ssl_set_certificates_file(serf_ssl_context_t *ssl_ctx,
                                             const char* file);
-int serf_ssl_check_host(const serf_ssl_certificate_t* cert,
+int serf_ssl_check_host(const serf_ssl_certificate_t *cert,
                         const char* hostname);
 
 }  // extern "C"
@@ -99,7 +102,8 @@ const char SerfStats::kSerfFetchByteCount[] = "serf_fetch_bytes_count";
 const char SerfStats::kSerfFetchTimeDurationMs[] =
     "serf_fetch_time_duration_ms";
 const char SerfStats::kSerfFetchCancelCount[] = "serf_fetch_cancel_count";
-const char SerfStats::kSerfFetchActiveCount[] = "serf_fetch_active_count";
+const char SerfStats::kSerfFetchActiveCount[] =
+    "serf_fetch_active_count";
 const char SerfStats::kSerfFetchTimeoutCount[] = "serf_fetch_timeout_count";
 const char SerfStats::kSerfFetchFailureCount[] = "serf_fetch_failure_count";
 const char SerfStats::kSerfFetchCertErrors[] = "serf_fetch_cert_errors";
@@ -117,46 +121,49 @@ GoogleString GetAprErrorString(apr_status_t status) {
   return error_str;
 }
 
-SerfFetch::SerfFetch(const GoogleString& url, AsyncFetch* async_fetch,
-                     MessageHandler* message_handler, Timer* timer)
-    : fetcher_(nullptr),
+SerfFetch::SerfFetch(const GoogleString& url,
+                     AsyncFetch* async_fetch,
+                     MessageHandler* message_handler,
+                     Timer* timer)
+    : fetcher_(NULL),
       timer_(timer),
       str_url_(url),
       async_fetch_(async_fetch),
       parser_(async_fetch->response_headers()),
       status_line_read_(false),
       message_handler_(message_handler),
-      pool_(nullptr),  // filled in once assigned to a thread, to use its pool.
-      bucket_alloc_(nullptr),
-      host_header_(nullptr),
-      sni_host_(nullptr),
-      connection_(nullptr),
+      pool_(NULL),  // filled in once assigned to a thread, to use its pool.
+      bucket_alloc_(NULL),
+      host_header_(NULL),
+      sni_host_(NULL),
+      connection_(NULL),
       bytes_received_(0),
       fetch_start_ms_(0),
       fetch_end_ms_(0),
       using_https_(false),
-      ssl_context_(nullptr),
-      ssl_error_message_(nullptr) {
+      ssl_context_(NULL),
+      ssl_error_message_(NULL) {
   memset(&url_, 0, sizeof(url_));
 }
 
 SerfFetch::~SerfFetch() {
-  DCHECK(async_fetch_ == nullptr);
-  if (connection_ != nullptr) {
+  DCHECK(async_fetch_ == NULL);
+  if (connection_ != NULL) {
     serf_connection_close(connection_);
   }
-  if (pool_ != nullptr) {
+  if (pool_ != NULL) {
     apr_pool_destroy(pool_);
   }
 }
 
 GoogleString SerfFetch::DebugInfo() {
-  if (host_header_ != nullptr && url_.scheme != nullptr &&
-      url_.hostinfo != nullptr) {
+  if (host_header_ != NULL &&
+      url_.scheme != NULL &&
+      url_.hostinfo != NULL) {
     GoogleUrl base(StrCat(url_.scheme, "://", host_header_));
     if (base.IsWebValid()) {
-      const char* url_path =
-          apr_uri_unparse(pool_, &url_, APR_URI_UNP_OMITSITEPART);
+      const char* url_path = apr_uri_unparse(pool_, &url_,
+                                             APR_URI_UNP_OMITSITEPART);
       GoogleUrl abs_url(base, url_path);
       if (abs_url.IsWebValid()) {
         GoogleString debug_info;
@@ -172,7 +179,7 @@ GoogleString SerfFetch::DebugInfo() {
 }
 
 void SerfFetch::Cancel(CancelCause cause) {
-  if (connection_ != nullptr) {
+  if (connection_ != NULL) {
     // We can get here either because we're canceling the connection ourselves
     // or because Serf detected an error.
     //
@@ -184,35 +191,34 @@ void SerfFetch::Cancel(CancelCause cause) {
     // handled (until we finally cleanup the old fetch and close things in
     // ~SerfFetch).
     serf_connection_close(connection_);
-    connection_ = nullptr;
+    connection_ = NULL;
   }
 
-  CallCallback(cause == CancelCause::kClientDecision
-                   ? SerfCompletionResult::kClientCancel
-                   : SerfCompletionResult::kFailure);
+  CallCallback(cause == CancelCause::kClientDecision ?
+                  SerfCompletionResult::kClientCancel :
+                  SerfCompletionResult::kFailure);
 }
 
 void SerfFetch::CallCallback(SerfCompletionResult result) {
-  if (ssl_error_message_ != nullptr) {
+  if (ssl_error_message_ != NULL) {
     result = SerfCompletionResult::kFailure;
   }
 
-  if (async_fetch_ != nullptr) {
+  if (async_fetch_ != NULL) {
     fetch_end_ms_ = timer_->NowMs();
     fetcher_->ReportCompletedFetchStats(this);
     CallbackDone(result);
     fetcher_->FetchComplete(this);
-  } else if (ssl_error_message_ == nullptr) {
-    LOG(FATAL)
-        << "BUG: Serf callback called more than once on same fetch "
-        << DebugInfo() << " (" << this << ").  Please report this "
-        << "at https://github.com/apache/incubator-pagespeed-mod/issues/new";
+  } else if (ssl_error_message_ == NULL) {
+    LOG(FATAL) << "BUG: Serf callback called more than once on same fetch "
+               << DebugInfo() << " (" << this << ").  Please report this "
+               << "at https://github.com/apache/incubator-pagespeed-mod/issues/new";
   }
 }
 
 void SerfFetch::CallbackDone(SerfCompletionResult result) {
   // fetcher_==NULL if Start is called during shutdown.
-  if (fetcher_ != nullptr) {
+  if (fetcher_ != NULL) {
     if (result == SerfCompletionResult::kFailure) {
       fetcher_->failure_count_->Add(1);
     }
@@ -224,21 +230,21 @@ void SerfFetch::CallbackDone(SerfCompletionResult result) {
     }
 
     if (async_fetch_ != nullptr) {
-      fetcher_->ReportFetchSuccessStats(result,
-                                        async_fetch_->response_headers(), this);
+      fetcher_->ReportFetchSuccessStats(
+          result, async_fetch_->response_headers(), this);
     }
   }
   async_fetch_->Done(result == SerfCompletionResult::kSuccess);
   // We should always NULL the async_fetch_ out after calling otherwise we
   // could get weird double calling errors.
-  async_fetch_ = nullptr;
+  async_fetch_ = NULL;
 }
 
 void SerfFetch::CleanupIfError() {
-  if ((connection_ != nullptr) &&
+  if ((connection_ != NULL) &&
       serf_connection_is_in_error_state(connection_)) {
-    message_handler_->Message(kInfo, "Serf cleanup for error'd fetch of: %s",
-                              DebugInfo().c_str());
+    message_handler_->Message(
+        kInfo, "Serf cleanup for error'd fetch of: %s", DebugInfo().c_str());
     Cancel(CancelCause::kSerfError);
   }
 }
@@ -253,36 +259,37 @@ int64 SerfFetch::TimeDuration() const {
 
 #if SERF_HTTPS_FETCHING
 // static
-apr_status_t SerfFetch::SSLCertValidate(void* data, int failures,
-                                        const serf_ssl_certificate_t* cert) {
-  return static_cast<SerfFetch*>(data)->HandleSSLCertValidation(failures, 0,
-                                                                cert);
+apr_status_t SerfFetch::SSLCertValidate(void *data, int failures,
+                                     const serf_ssl_certificate_t *cert) {
+  return static_cast<SerfFetch*>(data)->HandleSSLCertValidation(
+      failures, 0, cert);
 }
 
 // static
 apr_status_t SerfFetch::SSLCertChainValidate(
-    void* data, int failures, int error_depth,
-    const serf_ssl_certificate_t* const* certs, apr_size_t certs_count) {
+    void *data, int failures, int error_depth,
+    const serf_ssl_certificate_t * const *certs,
+    apr_size_t certs_count) {
   return static_cast<SerfFetch*>(data)->HandleSSLCertValidation(
-      failures, error_depth, nullptr);
+      failures, error_depth, NULL);
 }
 #endif
 
 // static
-apr_status_t SerfFetch::ConnectionSetup(apr_socket_t* socket,
-                                        serf_bucket_t** read_bkt,
-                                        serf_bucket_t** write_bkt,
-                                        void* setup_baton, apr_pool_t* pool) {
+apr_status_t SerfFetch::ConnectionSetup(
+    apr_socket_t* socket, serf_bucket_t **read_bkt, serf_bucket_t **write_bkt,
+    void* setup_baton, apr_pool_t* pool) {
   SerfFetch* fetch = static_cast<SerfFetch*>(setup_baton);
   *read_bkt = serf_bucket_socket_create(socket, fetch->bucket_alloc_);
 #if SERF_HTTPS_FETCHING
   apr_status_t status = APR_SUCCESS;
   if (fetch->using_https_) {
-    *read_bkt = serf_bucket_ssl_decrypt_create(*read_bkt, fetch->ssl_context_,
+    *read_bkt = serf_bucket_ssl_decrypt_create(*read_bkt,
+                                               fetch->ssl_context_,
                                                fetch->bucket_alloc_);
-    if (fetch->ssl_context_ == nullptr) {
+    if (fetch->ssl_context_ == NULL) {
       fetch->ssl_context_ = serf_bucket_ssl_decrypt_context_get(*read_bkt);
-      if (fetch->ssl_context_ == nullptr) {
+      if (fetch->ssl_context_ == NULL) {
         status = APR_EGENERAL;
       } else {
         SerfUrlAsyncFetcher* fetcher = fetch->fetcher_;
@@ -290,8 +297,8 @@ apr_status_t SerfFetch::ConnectionSetup(apr_socket_t* socket,
         const GoogleString& certs_file = fetcher->ssl_certificates_file();
 
         if (!certs_file.empty()) {
-          status = serf_ssl_set_certificates_file(fetch->ssl_context_,
-                                                  certs_file.c_str());
+          status = serf_ssl_set_certificates_file(
+              fetch->ssl_context_, certs_file.c_str());
         }
         if ((status == APR_SUCCESS) && !certs_dir.empty()) {
           status = serf_ssl_set_certificates_directory(fetch->ssl_context_,
@@ -309,19 +316,24 @@ apr_status_t SerfFetch::ConnectionSetup(apr_socket_t* socket,
       }
     }
 
-    serf_ssl_server_cert_callback_set(fetch->ssl_context_, SSLCertValidate,
-                                      fetch);
+    serf_ssl_server_cert_callback_set(
+        fetch->ssl_context_, SSLCertValidate, fetch);
 
+    #if defined(SERF_VERSION_AT_LEAST) && SERF_VERSION_AT_LEAST(1, 3, 0)
     serf_ssl_server_cert_chain_callback_set(
         fetch->ssl_context_, SSLCertValidate, SSLCertChainValidate, fetch);
+    #endif
 
+    #if defined(SERF_VERSION_AT_LEAST) && SERF_VERSION_AT_LEAST(1, 2, 0)
     status = serf_ssl_set_hostname(fetch->ssl_context_, fetch->sni_host_);
     if (status != APR_SUCCESS) {
       LOG(INFO) << "Unable to set hostname from serf fetcher. Connection "
                    "setup failed";
       return status;
     }
-    *write_bkt = serf_bucket_ssl_encrypt_create(*write_bkt, fetch->ssl_context_,
+    #endif
+    *write_bkt = serf_bucket_ssl_encrypt_create(*write_bkt,
+                                                fetch->ssl_context_,
                                                 fetch->bucket_alloc_);
   }
 #endif
@@ -329,16 +341,18 @@ apr_status_t SerfFetch::ConnectionSetup(apr_socket_t* socket,
 }
 
 // static
-void SerfFetch::ClosedConnection(serf_connection_t* conn, void* closed_baton,
-                                 apr_status_t why, apr_pool_t* pool) {
+void SerfFetch::ClosedConnection(serf_connection_t* conn,
+                                 void* closed_baton,
+                                 apr_status_t why,
+                                 apr_pool_t* pool) {
   SerfFetch* fetch = static_cast<SerfFetch*>(closed_baton);
   if (why != APR_SUCCESS) {
-    fetch->message_handler_->Warning(fetch->DebugInfo().c_str(), 0,
-                                     "Connection close (code=%d %s).", why,
-                                     GetAprErrorString(why).c_str());
+    fetch->message_handler_->Warning(
+        fetch->DebugInfo().c_str(), 0, "Connection close (code=%d %s).",
+        why, GetAprErrorString(why).c_str());
   }
   // Connection is closed.
-  fetch->connection_ = nullptr;
+  fetch->connection_ = NULL;
 }
 
 // static
@@ -359,6 +373,7 @@ serf_bucket_t* SerfFetch::AcceptResponse(serf_request_t* request,
   return serf_bucket_response_create(bucket, bucket_alloc);
 }
 
+
 // The handler MUST process data from the response bucket until the
 // bucket's read function states it would block (APR_STATUS_IS_EAGAIN).
 // The handler is invoked only when new data arrives. If no further data
@@ -368,7 +383,8 @@ serf_bucket_t* SerfFetch::AcceptResponse(serf_request_t* request,
 // static
 apr_status_t SerfFetch::HandleResponse(serf_request_t* request,
                                        serf_bucket_t* response,
-                                       void* handler_baton, apr_pool_t* pool) {
+                                       void* handler_baton,
+                                       apr_pool_t* pool) {
   SerfFetch* fetch = static_cast<SerfFetch*>(handler_baton);
   return fetch->HandleResponse(response);
 }
@@ -386,7 +402,7 @@ bool SerfFetch::StatusIndicatesDataPossible(apr_status_t status) {
 
 #if SERF_HTTPS_FETCHING
 apr_status_t SerfFetch::HandleSSLCertValidation(
-    int errors, int failure_depth, const serf_ssl_certificate_t* cert) {
+    int errors, int failure_depth, const serf_ssl_certificate_t *cert) {
   // TODO(jmarantz): is there value in logging the errors and failure_depth
   // formals here?
 
@@ -399,7 +415,8 @@ apr_status_t SerfFetch::HandleSSLCertValidation(
     ssl_error_message_ = "SSL certificate is self-signed";
   } else if (((errors & SERF_SSL_CERT_UNKNOWNCA) != 0) &&
              !fetcher_->allow_unknown_certificate_authority()) {
-    ssl_error_message_ = "SSL certificate has an unknown certificate authority";
+    ssl_error_message_ =
+        "SSL certificate has an unknown certificate authority";
   } else if (((errors & SERF_SSL_CERT_NOTYETVALID) != 0) &&
              !fetcher_->allow_certificate_not_yet_valid()) {
     ssl_error_message_ = "SSL certificate is not yet valid";
@@ -409,19 +426,19 @@ apr_status_t SerfFetch::HandleSSLCertValidation(
     ssl_error_message_ = "SSL certificate has an unknown error";
   }
 
-  if (ssl_error_message_ == nullptr && async_fetch_ != nullptr) {
-    if (  // If cert is null that means we're being called via
-        // SSLCertChainError. We only need to check the host name matches when
-        // being called via SSLCertError, in which case cert won't be null.
-        cert != nullptr &&
+  if (ssl_error_message_ == NULL && async_fetch_ != NULL) {
+    if (// If cert is null that means we're being called via SSLCertChainError.
+        // We only need to check the host name matches when being called via
+        // SSLCertError, in which case cert won't be null.
+        cert != NULL &&
         // No point in checking the host if we're allowing self-signed or a made
         // up CA, since people can forge whatever they want and often don't
         // bother to make the name match.
         !fetcher_->allow_self_signed() &&
         !fetcher_->allow_unknown_certificate_authority()) {
-      DCHECK(serf_ssl_cert_depth(cert) == 0)
-          << "Serf should be filtering out intermediate certs before hitting "
-             "us.";
+
+      DCHECK(serf_ssl_cert_depth(cert) == 0) <<
+          "Serf should be filtering out intermediate certs before hitting us.";
 
       // You would think we could do whatever serf_get.c does, but it turns
       // out that does no checking at all.  There's x509_check_host, added in
@@ -438,7 +455,7 @@ apr_status_t SerfFetch::HandleSSLCertValidation(
   // Immediately call the fetch callback on a cert error.  Note that
   // HandleSSLCertValidation is called multiple times when there is an error, so
   // check async_fetch before CallCallback.
-  if ((ssl_error_message_ != nullptr) && (async_fetch_ != nullptr)) {
+  if ((ssl_error_message_ != NULL) && (async_fetch_ != NULL)) {
     fetcher_->cert_errors_->Add(1);
     CallCallback(SerfCompletionResult::kFailure);  // sets async_fetch_ to null.
   }
@@ -460,7 +477,7 @@ apr_status_t SerfFetch::HandleSSLCertValidation(
 #endif
 
 apr_status_t SerfFetch::HandleResponse(serf_bucket_t* response) {
-  if (response == nullptr) {
+  if (response == NULL) {
     message_handler_->Message(
         kInfo, "serf HandleResponse called with NULL response for %s",
         DebugInfo().c_str());
@@ -484,7 +501,7 @@ apr_status_t SerfFetch::HandleResponse(serf_bucket_t* response) {
   apr_status_t status;
   do {
     if (!status_line_read_) {
-      status = ReadStatusLine(response);
+        status = ReadStatusLine(response);
     } else if (!parser_.headers_complete()) {
       status = ReadHeaders(response);
       // ReadHeaders returns EOF at the end of headers or actual EOF.
@@ -513,8 +530,9 @@ apr_status_t SerfFetch::HandleResponse(serf_bucket_t* response) {
     bool successful_completion =
         APR_STATUS_IS_EOF(status) && parser_.headers_complete();
     // Zeros async_fetch_.
-    CallCallback(successful_completion ? SerfCompletionResult::kSuccess
-                                       : SerfCompletionResult::kFailure);
+    CallCallback(successful_completion ?
+                     SerfCompletionResult::kSuccess :
+                     SerfCompletionResult::kFailure);
   }
   return status;
 }
@@ -526,9 +544,9 @@ apr_status_t SerfFetch::ReadStatusLine(serf_bucket_t* response) {
     ResponseHeaders* response_headers = async_fetch_->response_headers();
     response_headers->SetStatusAndReason(
         static_cast<HttpStatus::Code>(status_line.code));
-    response_headers->set_major_version(status_line.version / 1000);
-    response_headers->set_minor_version(status_line.version % 1000);
-    status_line_read_ = true;
+      response_headers->set_major_version(status_line.version / 1000);
+      response_headers->set_minor_version(status_line.version % 1000);
+      status_line_read_ = true;
   }
   return status;
 }
@@ -543,7 +561,7 @@ apr_status_t SerfFetch::ReadHeaders(serf_bucket_t* response) {
     return status;
   }
 
-  const char* data = nullptr;
+  const char* data = NULL;
   apr_size_t len = 0;
   serf_bucket_t* headers = serf_bucket_response_get_headers(response);
   status = serf_bucket_read(headers, SERF_READ_ALL_AVAIL, &data, &len);
@@ -555,7 +573,7 @@ apr_status_t SerfFetch::ReadHeaders(serf_bucket_t* response) {
     if (parser_.ParseChunk(StringPiece(data, len), message_handler_)) {
       if (parser_.headers_complete()) {
         ResponseHeaders* response_headers = async_fetch_->response_headers();
-        if (ssl_error_message_ != nullptr) {
+        if (ssl_error_message_ != NULL) {
           response_headers->set_status_code(HttpStatus::kNotFound);
           message_handler_->Message(kInfo, "%s: %s", DebugInfo().c_str(),
                                     ssl_error_message_);
@@ -615,7 +633,7 @@ void SerfFetch::FixUserAgent() {
       if (i != 0) {
         user_agent += " ";
       }
-      if (v[i] != nullptr) {
+      if (v[i] != NULL) {
         user_agent += *(v[i]);
       }
     }
@@ -624,9 +642,9 @@ void SerfFetch::FixUserAgent() {
   if (user_agent.empty()) {
     user_agent += "Serf/" SERF_VERSION_STRING;
   }
-  GoogleString version =
-      StrCat(" (", kModPagespeedSubrequestUserAgent,
-             "/" MOD_PAGESPEED_VERSION_STRING "-" LASTCHANGE_STRING ")");
+  GoogleString version = StrCat(
+      " (", kModPagespeedSubrequestUserAgent,
+      "/" MOD_PAGESPEED_VERSION_STRING "-" LASTCHANGE_STRING ")");
   if (!strings::EndsWith(StringPiece(user_agent), version)) {
     user_agent += version;
   }
@@ -634,15 +652,17 @@ void SerfFetch::FixUserAgent() {
 }
 
 // static
-apr_status_t SerfFetch::SetupRequest(serf_request_t* request, void* setup_baton,
+apr_status_t SerfFetch::SetupRequest(serf_request_t* request,
+                                     void* setup_baton,
                                      serf_bucket_t** req_bkt,
                                      serf_response_acceptor_t* acceptor,
                                      void** acceptor_baton,
                                      serf_response_handler_t* handler,
-                                     void** handler_baton, apr_pool_t* pool) {
+                                     void** handler_baton,
+                                     apr_pool_t* pool) {
   SerfFetch* fetch = static_cast<SerfFetch*>(setup_baton);
-  const char* url_path =
-      apr_uri_unparse(pool, &fetch->url_, APR_URI_UNP_OMITSITEPART);
+  const char* url_path = apr_uri_unparse(pool, &fetch->url_,
+                                         APR_URI_UNP_OMITSITEPART);
 
   // If there is an explicit Host header, then override the
   // host field in the Serf structure, as we will not be able
@@ -657,27 +677,30 @@ apr_status_t SerfFetch::SetupRequest(serf_request_t* request, void* setup_baton,
   RequestHeaders* request_headers = fetch->async_fetch_->request_headers();
 
   // Don't want to forward hop-by-hop stuff.
-  StringPieceVector names_to_sanitize = HttpAttributes::SortedHopByHopHeaders();
+  StringPieceVector names_to_sanitize =
+      HttpAttributes::SortedHopByHopHeaders();
   request_headers->RemoveAllFromSortedArray(&names_to_sanitize[0],
                                             names_to_sanitize.size());
 
   // Also leave Content-Length to serf.
   request_headers->RemoveAll(HttpAttributes::kContentLength);
 
-  serf_bucket_t* body_bkt = nullptr;
+  serf_bucket_t* body_bkt = NULL;
   const GoogleString& message_body = request_headers->message_body();
-  bool post_payload = !message_body.empty() &&
-                      (request_headers->method() == RequestHeaders::kPost);
+  bool post_payload =
+      !message_body.empty() &&
+      (request_headers->method() == RequestHeaders::kPost);
 
   if (post_payload) {
     body_bkt = serf_bucket_simple_create(
         message_body.data(), message_body.length(),
-        nullptr /* no free function */, nullptr /* no free baton*/,
+        NULL /* no free function */, NULL /* no free baton*/,
         serf_request_get_alloc(request));
   }
 
   *req_bkt = serf_request_bucket_request_create_for_host(
-      request, request_headers->method_string(), url_path, body_bkt,
+      request, request_headers->method_string(),
+      url_path, body_bkt,
       serf_request_get_alloc(request), fetch->host_header_);
   serf_bucket_t* hdrs_bkt = serf_bucket_request_get_headers(*req_bkt);
 
@@ -706,7 +729,7 @@ apr_status_t SerfFetch::SetupRequest(serf_request_t* request, void* setup_baton,
 bool SerfFetch::ParseUrl() {
   apr_status_t status = 0;
   status = apr_uri_parse(pool_, str_url_.c_str(), &url_);
-  if (status != APR_SUCCESS || url_.scheme == nullptr) {
+  if (status != APR_SUCCESS || url_.scheme == NULL) {
     return false;  // Failed to parse URL.
   }
   bool is_https = StringCaseEqual(url_.scheme, "https");
@@ -724,7 +747,7 @@ bool SerfFetch::ParseUrl() {
   // Host: in the fetch object.
   RequestHeaders* request_headers = async_fetch_->request_headers();
   const char* host = request_headers->Lookup1(HttpAttributes::kHost);
-  if (host == nullptr) {
+  if (host == NULL) {
     host = SerfUrlAsyncFetcher::ExtractHostHeader(url_, pool_);
   }
 
@@ -742,16 +765,17 @@ bool SerfFetch::ParseUrl() {
 
 class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
  public:
-  SerfThreadedFetcher(SerfUrlAsyncFetcher* parent, const char* proxy)
-      : SerfUrlAsyncFetcher(parent, proxy),
-        thread_id_(nullptr),
-        initiate_mutex_(parent->thread_system()->NewMutex()),
-        initiate_fetches_(new SerfFetchPool()),
-        initiate_fetches_nonempty_(initiate_mutex_->NewCondvar()),
-        thread_finish_(false),
-        thread_started_(false) {}
+  SerfThreadedFetcher(SerfUrlAsyncFetcher* parent, const char* proxy) :
+      SerfUrlAsyncFetcher(parent, proxy),
+      thread_id_(NULL),
+      initiate_mutex_(parent->thread_system()->NewMutex()),
+      initiate_fetches_(new SerfFetchPool()),
+      initiate_fetches_nonempty_(initiate_mutex_->NewCondvar()),
+      thread_finish_(false),
+      thread_started_(false) {
+  }
 
-  ~SerfThreadedFetcher() override {
+  ~SerfThreadedFetcher() {
     // Let the thread terminate naturally by telling it to unblock,
     // then waiting for it to finish its next active Poll operation.
     {
@@ -792,8 +816,8 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
   }
 
   void StartThread() {
-    CHECK_EQ(APR_SUCCESS, apr_thread_create(&thread_id_, nullptr, SerfThreadFn,
-                                            this, pool_));
+    CHECK_EQ(APR_SUCCESS,
+             apr_thread_create(&thread_id_, NULL, SerfThreadFn, this, pool_));
     thread_started_ = true;
   }
 
@@ -817,7 +841,7 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
     }
   }
 
-  void ShutDown() override {
+  void ShutDown() {
     // See comments in the destructor above.. The big difference is that
     // because we set shutdown_ to true new jobs can't actually come in.
     {
@@ -834,12 +858,12 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
   }
 
  protected:
-  bool AnyPendingFetches() override {
+  bool AnyPendingFetches() {
     ScopedMutex lock(initiate_mutex_.get());
     // NOTE: We must hold both mutexes to avoid the case where we miss a fetch
     // in transit.
     return !initiate_fetches_->empty() ||
-           SerfUrlAsyncFetcher::AnyPendingFetches();
+        SerfUrlAsyncFetcher::AnyPendingFetches();
   }
 
  private:
@@ -848,7 +872,7 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
     SerfThreadedFetcher* stc = static_cast<SerfThreadedFetcher*>(context);
     CHECK_EQ(thread_id, stc->thread_id_);
     stc->SerfThread();
-    return nullptr;
+    return NULL;
   }
 
   // Transfer fetches from initiate_fetches_ to active_fetches_.  If there's no
@@ -862,7 +886,7 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
     // Use a temp to minimize the amount of time we hold the
     // initiate_mutex_ lock, so that the parent thread doesn't get
     // blocked trying to initiate fetches.
-    std::unique_ptr<SerfFetchPool> xfer_fetches;
+    scoped_ptr<SerfFetchPool> xfer_fetches;
     {
       ScopedMutex lock(initiate_mutex_.get());
       // We must do this checking under the initiate_mutex_ lock.
@@ -881,7 +905,7 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
           }
         }
       }
-      xfer_fetches = std::make_unique<SerfFetchPool>();
+      xfer_fetches.reset(new SerfFetchPool());
 
       // Take mutex_ before relinquishing initiate_mutex_.  This guarantees that
       // AnyPendingFetches cannot see us in the time between emptying
@@ -905,8 +929,8 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
     while (!xfer_fetches->empty()) {
       SerfFetch* fetch = xfer_fetches->RemoveOldest();
       if (StartFetch(fetch)) {
-        SERF_DEBUG(LOG(INFO)
-                   << "Adding threaded fetch to url " << fetch->DebugInfo()
+        SERF_DEBUG(LOG(INFO) << "Adding threaded fetch to url "
+                   << fetch->DebugInfo()
                    << " (" << active_fetches_.size() << ")");
       }
     }
@@ -946,8 +970,8 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
       // here.  num_active_fetches will be 0, and we'll block in the next
       // call to TransferFetches above.
       num_active_fetches = Poll(kPollIntervalMs);
-      SERF_DEBUG(LOG(INFO) << "Finished polling from serf thread (" << this
-                           << ")");
+      SERF_DEBUG(LOG(INFO) << "Finished polling from serf thread ("
+                 << this << ")");
     }
   }
 
@@ -955,16 +979,16 @@ class SerfThreadedFetcher : public SerfUrlAsyncFetcher {
 
   // protects initiate_fetches_, initiate_fetches_nonempty_, thread_finish_
   // and thread_started_.
-  std::unique_ptr<ThreadSystem::CondvarCapableMutex> initiate_mutex_;
+  scoped_ptr<ThreadSystem::CondvarCapableMutex> initiate_mutex_;
   // pushed in the main thread; popped by TransferFetches().
-  std::unique_ptr<SerfFetchPool> initiate_fetches_;
+  scoped_ptr<SerfFetchPool> initiate_fetches_;
   // condvar that indicates that initiate_fetches_ has become nonempty.  During
   // normal operation, only the serf worker thread consumes initiated fetches
   // (this can change during thread shutdown), but the usual condition variable
   // caveats apply: Just because the condition variable indicates
   // initiate_fetches_nonempty_ doesn't mean it's true, and a waiting thread
   // must check initiate_fetches_ explicitly while holding initiate_mutex_.
-  std::unique_ptr<ThreadSystem::Condvar> initiate_fetches_nonempty_;
+  scoped_ptr<ThreadSystem::Condvar> initiate_fetches_nonempty_;
 
   // Flag to signal worker to finish working and terminate.
   bool thread_finish_;
@@ -981,7 +1005,7 @@ bool SerfFetch::Start(SerfUrlAsyncFetcher* fetcher,
   // the pool ops.
   fetcher_ = fetcher;
   apr_pool_create(&pool_, fetcher_->pool());
-  bucket_alloc_ = serf_bucket_allocator_create(pool_, nullptr, nullptr);
+  bucket_alloc_ = serf_bucket_allocator_create(pool_, NULL, NULL);
 
   fetch_start_ms_ = timer_->NowMs();
   // Parse and validate the URL.
@@ -992,9 +1016,12 @@ bool SerfFetch::Start(SerfUrlAsyncFetcher* fetcher,
   using_https_ = StringCaseEqual("https", url_.scheme);
   DCHECK(fetcher->allow_https() || !using_https_);
 
-  apr_status_t status =
-      serf_connection_create2(&connection_, serf_context, url_, ConnectionSetup,
-                              this, ClosedConnection, this, pool_);
+  apr_status_t status = serf_connection_create2(&connection_,
+                                                serf_context,
+                                                url_,
+                                                ConnectionSetup, this,
+                                                ClosedConnection, this,
+                                                pool_);
   if (status != APR_SUCCESS) {
     message_handler_->Error(DebugInfo().c_str(), 0,
                             "Error status=%d (%s) serf_connection_create2",
@@ -1012,13 +1039,14 @@ bool SerfFetch::Start(SerfUrlAsyncFetcher* fetcher,
     return true;
   } else {
     message_handler_->Error(DebugInfo().c_str(), 0,
-                            "serf_context_run error status=%d (%s)", status,
-                            GetAprErrorString(status).c_str());
+                            "serf_context_run error status=%d (%s)",
+                            status, GetAprErrorString(status).c_str());
     return false;
   }
 }
 
-void SerfFetch::ParseUrlForTesting(bool* status, apr_uri_t** url,
+void SerfFetch::ParseUrlForTesting(bool* status,
+                                   apr_uri_t** url,
                                    const char** host_header,
                                    const char** sni_host) {
   *status = ParseUrl();
@@ -1036,17 +1064,17 @@ void SerfFetch::SetFetcherForTesting(SerfUrlAsyncFetcher* fetcher) {
 // format of hostname:port.
 bool SerfUrlAsyncFetcher::SetupProxy(const char* proxy) {
   apr_status_t status = 0;
-  if (proxy == nullptr || *proxy == '\0') {
+  if (proxy == NULL || *proxy == '\0') {
     return true;  // No proxy to be set.
   }
 
-  apr_sockaddr_t* proxy_address = nullptr;
+  apr_sockaddr_t* proxy_address = NULL;
   apr_port_t proxy_port;
   char* proxy_host;
   char* proxy_scope;
-  status =
-      apr_parse_addr_port(&proxy_host, &proxy_scope, &proxy_port, proxy, pool_);
-  if (status != APR_SUCCESS || proxy_host == nullptr || proxy_port == 0 ||
+  status = apr_parse_addr_port(&proxy_host, &proxy_scope, &proxy_port, proxy,
+                               pool_);
+  if (status != APR_SUCCESS || proxy_host == NULL || proxy_port == 0 ||
       (status = apr_sockaddr_info_get(&proxy_address, proxy_host, APR_UNSPEC,
                                       proxy_port, 0, pool_)) != APR_SUCCESS) {
     return false;
@@ -1060,38 +1088,39 @@ SerfUrlAsyncFetcher::SerfUrlAsyncFetcher(const char* proxy, apr_pool_t* pool,
                                          Statistics* statistics, Timer* timer,
                                          int64 timeout_ms,
                                          MessageHandler* message_handler)
-    : pool_(nullptr),
+    : pool_(NULL),
       thread_system_(thread_system),
       timer_(timer),
-      mutex_(nullptr),
-      threaded_fetcher_(nullptr),
-      active_count_(nullptr),
-      serf_context_(nullptr),
-      request_count_(nullptr),
-      byte_count_(nullptr),
-      time_duration_ms_(nullptr),
-      cancel_count_(nullptr),
-      timeout_count_(nullptr),
-      failure_count_(nullptr),
-      cert_errors_(nullptr),
-      read_calls_count_(nullptr),
-      ultimate_success_(nullptr),
-      ultimate_failure_(nullptr),
-      last_check_timestamp_ms_(nullptr),
+      mutex_(NULL),
+      threaded_fetcher_(NULL),
+      active_count_(NULL),
+      serf_context_(NULL),
+      request_count_(NULL),
+      byte_count_(NULL),
+      time_duration_ms_(NULL),
+      cancel_count_(NULL),
+      timeout_count_(NULL),
+      failure_count_(NULL),
+      cert_errors_(NULL),
+      read_calls_count_(NULL),
+      ultimate_success_(NULL),
+      ultimate_failure_(NULL),
+      last_check_timestamp_ms_(NULL),
       timeout_ms_(timeout_ms),
       shutdown_(false),
       list_outstanding_urls_on_error_(false),
       track_original_content_length_(false),
       https_options_(0),
       message_handler_(message_handler) {
-  CHECK(statistics != nullptr);
-  request_count_ = statistics->GetVariable(SerfStats::kSerfFetchRequestCount);
+  CHECK(statistics != NULL);
+  request_count_  =
+      statistics->GetVariable(SerfStats::kSerfFetchRequestCount);
   byte_count_ = statistics->GetVariable(SerfStats::kSerfFetchByteCount);
   time_duration_ms_ =
       statistics->GetVariable(SerfStats::kSerfFetchTimeDurationMs);
   cancel_count_ = statistics->GetVariable(SerfStats::kSerfFetchCancelCount);
-  active_count_ =
-      statistics->GetUpDownCounter(SerfStats::kSerfFetchActiveCount);
+  active_count_ = statistics->GetUpDownCounter(
+      SerfStats::kSerfFetchActiveCount);
   timeout_count_ = statistics->GetVariable(SerfStats::kSerfFetchTimeoutCount);
   failure_count_ = statistics->GetVariable(SerfStats::kSerfFetchFailureCount);
   cert_errors_ = statistics->GetVariable(SerfStats::kSerfFetchCertErrors);
@@ -1109,13 +1138,13 @@ SerfUrlAsyncFetcher::SerfUrlAsyncFetcher(const char* proxy, apr_pool_t* pool,
 
 SerfUrlAsyncFetcher::SerfUrlAsyncFetcher(SerfUrlAsyncFetcher* parent,
                                          const char* proxy)
-    : pool_(nullptr),
+    : pool_(NULL),
       thread_system_(parent->thread_system_),
       timer_(parent->timer_),
-      mutex_(nullptr),
-      threaded_fetcher_(nullptr),
+      mutex_(NULL),
+      threaded_fetcher_(NULL),
       active_count_(parent->active_count_),
-      serf_context_(nullptr),
+      serf_context_(NULL),
       request_count_(parent->request_count_),
       byte_count_(parent->byte_count_),
       time_duration_ms_(parent->time_duration_ms_),
@@ -1144,16 +1173,16 @@ SerfUrlAsyncFetcher::~SerfUrlAsyncFetcher() {
     message_handler_->Message(
         kError, "SerfFetcher destructed with %d orphaned fetches.",
         orphaned_fetches);
-    if (active_count_ != nullptr) {
+    if (active_count_ != NULL) {
       active_count_->Add(-orphaned_fetches);
     }
-    if (cancel_count_ != nullptr) {
+    if (cancel_count_ != NULL) {
       cancel_count_->Add(orphaned_fetches);
     }
   }
 
   active_fetches_.DeleteAll();
-  if (threaded_fetcher_ != nullptr) {
+  if (threaded_fetcher_ != NULL) {
     delete threaded_fetcher_;
   }
   delete mutex_;
@@ -1163,7 +1192,7 @@ SerfUrlAsyncFetcher::~SerfUrlAsyncFetcher() {
 void SerfUrlAsyncFetcher::ShutDown() {
   // Note that we choose not to delete the threaded_fetcher_ to avoid worrying
   // about races on its deletion.
-  if (threaded_fetcher_ != nullptr) {
+  if (threaded_fetcher_ != NULL) {
     threaded_fetcher_->ShutDown();
   }
 
@@ -1203,7 +1232,7 @@ void SerfUrlAsyncFetcher::CancelActiveFetchesMutexHeld() {
   }
 
   if (num_canceled != 0) {
-    if (cancel_count_ != nullptr) {
+    if (cancel_count_ != NULL) {
       cancel_count_->Add(num_canceled);
     }
   }
@@ -1218,8 +1247,9 @@ bool SerfUrlAsyncFetcher::StartFetch(SerfFetch* fetch) {
                                       fetch->DebugInfo().c_str());
     active_fetches_.Remove(fetch);
     active_count_->Add(-1);
-    fetch->CallbackDone(shutdown_ ? SerfCompletionResult::kClientCancel
-                                  : SerfCompletionResult::kFailure);
+    fetch->CallbackDone(shutdown_ ?
+                            SerfCompletionResult::kClientCancel :
+                            SerfCompletionResult::kFailure);
     delete fetch;
   }
   return started;
@@ -1238,13 +1268,14 @@ void SerfUrlAsyncFetcher::Fetch(const GoogleString& url,
   // both on 'this' and threaded_fetcher_ that could use cleaning up.
 }
 
-void SerfUrlAsyncFetcher::PrintActiveFetches(MessageHandler* handler) const {
+void SerfUrlAsyncFetcher::PrintActiveFetches(
+    MessageHandler* handler) const {
   ScopedMutex mutex(mutex_);
   for (SerfFetchPool::const_iterator p = active_fetches_.begin(),
-                                     e = active_fetches_.end();
-       p != e; ++p) {
+           e = active_fetches_.end(); p != e; ++p) {
     SerfFetch* fetch = *p;
-    handler->Message(kInfo, "Active fetch: %s", fetch->DebugInfo().c_str());
+    handler->Message(kInfo, "Active fetch: %s",
+                     fetch->DebugInfo().c_str());
   }
 }
 
@@ -1254,7 +1285,7 @@ int SerfUrlAsyncFetcher::Poll(int64 max_wait_ms) {
   ScopedMutex mutex(mutex_);
   if (!active_fetches_.empty()) {
     apr_status_t status =
-        serf_context_run(serf_context_, 1000 * max_wait_ms, pool_);
+        serf_context_run(serf_context_, 1000*max_wait_ms, pool_);
     completed_fetches_.DeleteAll();
     if (APR_STATUS_IS_TIMEUP(status)) {
       // Remove expired fetches from the front of the queue.
@@ -1276,7 +1307,7 @@ int SerfUrlAsyncFetcher::Poll(int64 max_wait_ms) {
             static_cast<long>(max_wait_ms));            // NOLINT
         // Note that canceling the fetch will ultimately call FetchComplete and
         // delete it from the pool.
-        if (timeout_count_ != nullptr) {
+        if (timeout_count_ != NULL) {
           timeout_count_->Add(1);
         }
         fetch->Cancel(SerfFetch::CancelCause::kFetchTimeout);
@@ -1306,13 +1337,12 @@ int SerfUrlAsyncFetcher::Poll(int64 max_wait_ms) {
           "Serf status %d(%s) polling for %ld %s fetches for %g seconds",
           status, GetAprErrorString(status).c_str(),
           static_cast<long>(active_fetches_.size()),  // NOLINT
-          (threaded_fetcher_ == nullptr) ? "threaded" : "non-blocking",
-          max_wait_ms / 1.0e3);
+          (threaded_fetcher_ == NULL) ? "threaded" : "non-blocking",
+          max_wait_ms/1.0e3);
       if (list_outstanding_urls_on_error_) {
         int64 now_ms = timer_->NowMs();
         for (Pool<SerfFetch>::iterator p = active_fetches_.begin(),
-                                       e = active_fetches_.end();
-             p != e; ++p) {
+                 e = active_fetches_.end(); p != e; ++p) {
           SerfFetch* fetch = *p;
           int64 age_ms = now_ms - fetch->fetch_start_ms();
           message_handler_->Message(kError, "URL %s active for %ld ms",
@@ -1353,10 +1383,12 @@ void SerfUrlAsyncFetcher::ReportCompletedFetchStats(const SerfFetch* fetch) {
 }
 
 void SerfUrlAsyncFetcher::ReportFetchSuccessStats(
-    SerfCompletionResult result, const ResponseHeaders* headers,
+    SerfCompletionResult result,
+    const ResponseHeaders* headers,
     const SerfFetch* fetch) {
   if (result != SerfCompletionResult::kClientCancel) {
-    if (result == SerfCompletionResult::kSuccess && !headers->IsErrorStatus()) {
+    if (result == SerfCompletionResult::kSuccess &&
+        !headers->IsErrorStatus()) {
       ultimate_success_->Add(1);
     } else {
       ultimate_failure_->Add(1);
@@ -1379,12 +1411,11 @@ void SerfUrlAsyncFetcher::ReportFetchSuccessStats(
       if (total >= kReliabilityCheckMinFetches &&
           (double(success) / total) < 0.5) {
         message_handler_->Message(
-            kError,
-            "PageSpeed Serf fetch failure rate extremely high; "
-            "only %s of %s recent fetches fully successful; is fetching "
-            "working?",
-            Integer64ToString(success).c_str(),
-            Integer64ToString(total).c_str());
+          kError, "PageSpeed Serf fetch failure rate extremely high; "
+          "only %s of %s recent fetches fully successful; is fetching "
+          "working?",
+          Integer64ToString(success).c_str(),
+          Integer64ToString(total).c_str());
       }
     }
   }
@@ -1395,18 +1426,17 @@ bool SerfUrlAsyncFetcher::AnyPendingFetches() {
   return !active_fetches_.empty();
 }
 
-int SerfUrlAsyncFetcher::ApproximateNumActiveFetches() {
+int SerfUrlAsyncFetcher:: ApproximateNumActiveFetches() {
   ScopedMutex lock(mutex_);
   return active_fetches_.size();
 }
 
-bool SerfUrlAsyncFetcher::WaitForActiveFetches(int64 max_ms,
-                                               MessageHandler* message_handler,
-                                               WaitChoice wait_choice) {
+bool SerfUrlAsyncFetcher::WaitForActiveFetches(
+    int64 max_ms, MessageHandler* message_handler, WaitChoice wait_choice) {
   bool ret = true;
-  if ((threaded_fetcher_ != nullptr) && (wait_choice != kMainlineOnly)) {
-    ret &=
-        threaded_fetcher_->WaitForActiveFetchesHelper(max_ms, message_handler);
+  if ((threaded_fetcher_ != NULL) && (wait_choice != kMainlineOnly)) {
+    ret &= threaded_fetcher_->WaitForActiveFetchesHelper(
+        max_ms, message_handler);
   }
   if (wait_choice != kThreadedOnly) {
     ret &= WaitForActiveFetchesHelper(max_ms, message_handler);
@@ -1423,21 +1453,21 @@ bool SerfUrlAsyncFetcher::WaitForActiveFetchesHelper(
     while ((now_ms < end_ms) && any_pending_fetches) {
       int64 remaining_ms = end_ms - now_ms;
       SERF_DEBUG(LOG(INFO) << "Blocking process waiting " << remaining_ms
-                           << "ms for " << ApproximateNumActiveFetches()
-                           << " fetches to complete");
+                 << "ms for " << ApproximateNumActiveFetches()
+                 << " fetches to complete");
       SERF_DEBUG(PrintActiveFetches(message_handler));
       Poll(remaining_ms);
       now_ms = timer_->NowMs();
       any_pending_fetches = AnyPendingFetches();
     }
     if (any_pending_fetches) {
-      message_handler->Message(kError,
-                               "Serf timeout waiting for fetches to complete:");
+      message_handler->Message(
+          kError, "Serf timeout waiting for fetches to complete:");
       PrintActiveFetches(message_handler);
       return false;
     }
     SERF_DEBUG(LOG(INFO) << "Serf successfully completed "
-                         << ApproximateNumActiveFetches() << " active fetches");
+               << ApproximateNumActiveFetches() << " active fetches");
   }
   return true;
 }
@@ -1477,14 +1507,14 @@ void SerfUrlAsyncFetcher::InitStats(Statistics* statistics) {
 
 void SerfUrlAsyncFetcher::set_list_outstanding_urls_on_error(bool x) {
   list_outstanding_urls_on_error_ = x;
-  if (threaded_fetcher_ != nullptr) {
+  if (threaded_fetcher_ != NULL) {
     threaded_fetcher_->set_list_outstanding_urls_on_error(x);
   }
 }
 
 void SerfUrlAsyncFetcher::set_track_original_content_length(bool x) {
   track_original_content_length_ = x;
-  if (threaded_fetcher_ != nullptr) {
+  if (threaded_fetcher_ != NULL) {
     threaded_fetcher_->set_track_original_content_length(x);
   }
 }
@@ -1508,8 +1538,9 @@ bool SerfUrlAsyncFetcher::ParseHttpsOptions(StringPiece directive,
     } else if (keyword == "allow_certificate_not_yet_valid") {
       https_options |= kAllowCertificateNotYetValid;
     } else {
-      StrAppend(error_message, "Invalid HTTPS keyword: ", keyword,
-                ", legal options are: " SERF_HTTPS_KEYWORDS);
+      StrAppend(error_message,
+                "Invalid HTTPS keyword: ", keyword, ", legal options are: "
+                SERF_HTTPS_KEYWORDS);
       return false;
     }
   }
@@ -1517,14 +1548,15 @@ bool SerfUrlAsyncFetcher::ParseHttpsOptions(StringPiece directive,
   return true;
 }
 
-const char* SerfUrlAsyncFetcher::ExtractHostHeader(const apr_uri_t& uri,
-                                                   apr_pool_t* pool) {
+const char* SerfUrlAsyncFetcher::ExtractHostHeader(
+    const apr_uri_t& uri, apr_pool_t* pool) {
   // Construct it ourselves from URL. Note that we shouldn't include the
   // user info here, just host and any explicit port. The reason this is done
   // with APR functions and not GoogleUrl is that APR URLs are what we have,
   // as that's what Serf takes.
-  const char* host = apr_uri_unparse(
-      pool, &uri, APR_URI_UNP_OMITPATHINFO | APR_URI_UNP_OMITUSERINFO);
+  const char* host = apr_uri_unparse(pool, &uri,
+                                     APR_URI_UNP_OMITPATHINFO |
+                                     APR_URI_UNP_OMITUSERINFO);
   // This still normally has the scheme, which we should drop.
   stringpiece_ssize_type slash_pos = StringPiece(host).find_last_of('/');
   if (slash_pos != StringPiece::npos) {
@@ -1532,6 +1564,7 @@ const char* SerfUrlAsyncFetcher::ExtractHostHeader(const apr_uri_t& uri,
   }
   return host;
 }
+
 
 GoogleString SerfUrlAsyncFetcher::RemovePortFromHostHeader(
     const GoogleString& host) {
@@ -1558,13 +1591,12 @@ bool SerfUrlAsyncFetcher::SetHttpsOptions(StringPiece directive) {
 
 #if !SERF_HTTPS_FETCHING
   if (allow_https()) {
-    message_handler_->MessageS(kError,
-                               "HTTPS fetching has not been compiled "
+    message_handler_->MessageS(kError, "HTTPS fetching has not been compiled "
                                "into the binary, so it has not been enabled.");
     https_options_ = 0;
   }
 #endif
-  if (threaded_fetcher_ != nullptr) {
+  if (threaded_fetcher_ != NULL) {
     threaded_fetcher_->set_https_options(https_options_);
   }
   return true;
@@ -1572,14 +1604,14 @@ bool SerfUrlAsyncFetcher::SetHttpsOptions(StringPiece directive) {
 
 void SerfUrlAsyncFetcher::SetSslCertificatesDir(StringPiece dir) {
   dir.CopyToString(&ssl_certificates_dir_);
-  if (threaded_fetcher_ != nullptr) {
+  if (threaded_fetcher_ != NULL) {
     threaded_fetcher_->SetSslCertificatesDir(dir);
   }
 }
 
 void SerfUrlAsyncFetcher::SetSslCertificatesFile(StringPiece file) {
   file.CopyToString(&ssl_certificates_file_);
-  if (threaded_fetcher_ != nullptr) {
+  if (threaded_fetcher_ != NULL) {
     threaded_fetcher_->SetSslCertificatesFile(file);
   }
 }
@@ -1600,6 +1632,8 @@ bool SerfUrlAsyncFetcher::allow_certificate_not_yet_valid() const {
   return ((https_options_ & kAllowCertificateNotYetValid) != 0);
 }
 
-bool SerfUrlAsyncFetcher::SupportsHttps() const { return allow_https(); }
+bool SerfUrlAsyncFetcher::SupportsHttps() const {
+  return allow_https();
+}
 
 }  // namespace net_instaweb

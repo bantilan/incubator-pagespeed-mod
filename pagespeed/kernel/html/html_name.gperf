@@ -126,7 +126,6 @@ struct KeywordMap {const char* name; net_instaweb::HtmlName::Keyword keyword;};
 "data-pagespeed-size",                HtmlName::kDataPagespeedSize
 "data-pagespeed-url-hash",            HtmlName::kDataPagespeedUrlHash
 "data-src",                           HtmlName::kDataSrc
-"data-srcset",                        HtmlName::kDataSrcset
 "dd",                                 HtmlName::kDd
 "declare",                            HtmlName::kDeclare
 "defaultchecked",                     HtmlName::kDefaultchecked
@@ -146,6 +145,7 @@ struct KeywordMap {const char* name; net_instaweb::HtmlName::Keyword keyword;};
 "enctype",                            HtmlName::kEnctype
 "event",                              HtmlName::kEvent
 "fieldset",                           HtmlName::kFieldset
+"fetchpriority",                      HtmlName::kFetchpriority
 "font",                               HtmlName::kFont
 "footer",                             HtmlName::kFooter
 "for",                                HtmlName::kFor
@@ -187,6 +187,7 @@ struct KeywordMap {const char* name; net_instaweb::HtmlName::Keyword keyword;};
 "li",                                 HtmlName::kLi
 "link",                               HtmlName::kLink
 "longdesc",                           HtmlName::kLongdesc
+"loading",                            HtmlName::kLoading
 "loop",                               HtmlName::kLoop
 "main",                               HtmlName::kMain
 "manifest",                           HtmlName::kManifest

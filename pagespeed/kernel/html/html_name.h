@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 #ifndef PAGESPEED_KERNEL_HTML_HTML_NAME_H_
 #define PAGESPEED_KERNEL_HTML_HTML_NAME_H_
 
@@ -101,7 +102,6 @@ class HtmlName {
     kDataPagespeedSize,
     kDataPagespeedUrlHash,
     kDataSrc,
-    kDataSrcset,
     kDd,
     kDeclare,
     kDefaultchecked,
@@ -121,6 +121,7 @@ class HtmlName {
     kEnctype,
     kEvent,
     kFieldset,
+    kFetchpriority,
     kFont,
     kFooter,
     kFor,
@@ -162,6 +163,7 @@ class HtmlName {
     kLi,
     kLink,
     kLongdesc,
+    kLoading,
     kLoop,
     kMain,
     kManifest,
@@ -254,6 +256,7 @@ class HtmlName {
     kNotAKeyword
   };
 
+
   // HtmlName's should be normally constructed using HtmlParse::MakeName
 
   // Returns the keyword enumeration for this HTML Name.  Note that
@@ -291,7 +294,8 @@ class HtmlName {
   // keyword.  The storage for 'str' must be managed, and
   // must be guaranteed valid throughout the life of the HtmlName.
   HtmlName(Keyword keyword, const StringPiece* str)
-      : keyword_(keyword), str_(str) {}
+      : keyword_(keyword), str_(str) {
+  }
 
   friend class HtmlNameTest;
   friend class HtmlParse;
