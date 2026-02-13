@@ -26,6 +26,7 @@
 #include <algorithm>  // std::min
 #include <memory>
 #include "base/scoped_ptr.h"
+#include "base/stringprintf.h"
 #include <string>
 #include <vector>
 
