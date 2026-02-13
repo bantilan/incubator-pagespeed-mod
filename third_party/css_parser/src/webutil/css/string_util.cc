@@ -17,15 +17,17 @@
  * under the License.
  */
 
-#include "third_party/css_parser/src/webutil/css/string_util.h"
+
+
+#include "webutil/css/string_util.h"
 
 #include <cerrno>
 #include <cstdlib>  // strtod
 #include <cstring>  // memcpy
 
-#include "third_party/css_parser/src/strings/ascii_ctype.h"  // ascii_tolower
-#include "third_party/css_parser/src/strings/memutil.h"
-#include "third_party/css_parser/src/util/utf8/public/unicodetext.h"
+#include "strings/ascii_ctype.h"  // ascii_tolower
+#include "strings/memutil.h"
+#include "util/utf8/public/unicodetext.h"
 
 namespace Css {
 
@@ -33,7 +35,7 @@ namespace Css {
 // RE2 (http://code.google.com/p/re2/).
 bool ParseDouble(const char* str, int len, double* dest) {
   static const int kMaxLength = 200;
-  if (dest == nullptr || len == 0 || len >= kMaxLength) {
+  if (dest == NULL || len == 0 || len >= kMaxLength) {
     return false;
   }
   char buf[kMaxLength];
@@ -51,15 +53,17 @@ bool ParseDouble(const char* str, int len, double* dest) {
 
 namespace {
 
-inline bool IsAscii(char32 c) { return c < 0x80 && c >= 0; }
+inline bool IsAscii(char32 c) {
+  return c < 0x80 && c >= 0;
+}
 
 }  // namespace
 
 UnicodeText LowercaseAscii(const UnicodeText& in_text) {
   UnicodeText out_text;
   // TODO(sligocki): out_text.reserve(in_text.utf8_length())
-  for (UnicodeText::const_iterator iter = in_text.begin(); iter < in_text.end();
-       ++iter) {
+  for (UnicodeText::const_iterator iter = in_text.begin();
+       iter < in_text.end(); ++iter) {
     char32 c = *iter;
     if (IsAscii(c)) {
       out_text.push_back(ascii_tolower(c));
@@ -70,25 +74,24 @@ UnicodeText LowercaseAscii(const UnicodeText& in_text) {
   return out_text;
 }
 
-bool StringCaseEquals(const CssStringPiece& a, const CssStringPiece& b) {
+bool StringCaseEquals(const StringPiece& a, const StringPiece& b) {
   return (a.size() == b.size() &&
           (memcasecmp(a.data(), b.data(), a.size()) == 0));
 }
 
-bool StringCaseEquals(const UnicodeText& ident, const CssStringPiece& str) {
+bool StringCaseEquals(const UnicodeText& ident, const StringPiece& str) {
   return (ident.utf8_length() == str.size() &&
           (memcasecmp(str.data(), ident.utf8_data(), str.size()) == 0));
 }
 
-std::vector<CssStringPiece> SplitSkippingEmpty(CssStringPiece full,
-                                               char delim) {
-  std::vector<CssStringPiece> result;
+std::vector<StringPiece> SplitSkippingEmpty(StringPiece full, char delim) {
+  std::vector<StringPiece> result;
 
-  CssStringPiece::size_type begin_index, end_index;
+  StringPiece::size_type begin_index, end_index;
   begin_index = full.find_first_not_of(delim);
-  while (begin_index != CssStringPiece::npos) {
+  while (begin_index != StringPiece::npos) {
     end_index = full.find_first_of(delim, begin_index);
-    if (end_index == CssStringPiece::npos) {
+    if (end_index == StringPiece::npos) {
       result.push_back(full.substr(begin_index));
       break;
     }

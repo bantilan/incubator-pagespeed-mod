@@ -17,24 +17,26 @@
  * under the License.
  */
 
+
+
 #ifndef WEBUTIL_CSS_TOSTRING_H_
 #define WEBUTIL_CSS_TOSTRING_H_
 
-#include "third_party/css_parser/src/strings/stringpiece.h"
-#include "third_party/css_parser/src/webutil/css/string.h"
+#include "strings/stringpiece.h"
+#include "webutil/css/string.h"
 
 class UnicodeText;
 
 namespace Css {
 
 // Escape text so that it is safe to put in "" in a CSS string.
-string EscapeString(CssStringPiece src);
+string EscapeString(StringPiece src);
 string EscapeString(const UnicodeText& src);
 // Escape a text URL so that it is safe to put in url() in CSS.
-string EscapeUrl(CssStringPiece src);
+string EscapeUrl(StringPiece src);
 string EscapeUrl(const UnicodeText& src);
 // Escape an identifier so that it will be re-parsed correctly.
-string EscapeIdentifier(CssStringPiece src);
+string EscapeIdentifier(StringPiece src);
 string EscapeIdentifier(const UnicodeText& src);
 
 }  // namespace Css

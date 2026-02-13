@@ -17,29 +17,36 @@
  * under the License.
  */
 
-#include "third_party/css_parser/src/webutil/css/util.h"
+
+
+#include "webutil/css/util.h"
 
 #include <memory>
+#include "base/scoped_ptr.h"
 #include <string>
 
 #include "base/logging.h"
-#include "test/pagespeed/kernel/base/gtest.h"
-#include "third_party/css_parser/src/webutil/css/parser.h"
-#include "third_party/css_parser/src/webutil/css/string.h"
-#include "third_party/css_parser/src/webutil/html/htmlcolor.h"
+#include "testing/base/public/googletest.h"
+#include "testing/base/public/gunit.h"
+#include "webutil/css/parser.h"
+#include "webutil/css/string.h"
+#include "webutil/html/htmlcolor.h"
 
 namespace {
 
 class CssSystemColorTest : public testing::Test {
  protected:
-  void SetUp() override { color_ = std::make_unique<HtmlColor>(0, 0, 0); }
+  virtual void SetUp() {
+    color_.reset(new HtmlColor(0, 0, 0));
+  }
 
-  void TearDown() override {}
+  virtual void TearDown() {
+  }
 
   void TestColor(const char* name, const char* mapped_to) {
     CHECK(Css::Util::GetSystemColor(name, color_.get()));
     // TODO(sligocki): Chromium CHECK_STREQ appears to be buggy. Fixit.
-    // CHECK_STREQ(color_->ToString().c_str(), mapped_to);
+    //CHECK_STREQ(color_->ToString().c_str(), mapped_to);
     CHECK_EQ(color_->ToString(), string(mapped_to));
   }
 
@@ -48,7 +55,7 @@ class CssSystemColorTest : public testing::Test {
   }
 
  private:
-  std::unique_ptr<HtmlColor> color_;
+  scoped_ptr<HtmlColor> color_;
 };
 
 TEST_F(CssSystemColorTest, common_colors) {
@@ -78,15 +85,15 @@ namespace Css {
 
 class MediaAppliesToScreenTest : public testing::Test {
  protected:
-  bool ParseMediaAppliesToScreen(const CssStringPiece& media_string) {
+  bool ParseMediaAppliesToScreen(const StringPiece& media_string) {
     Css::Parser p(media_string);
-    std::unique_ptr<Css::MediaQueries> queries(p.ParseMediaQueries());
+    scoped_ptr<Css::MediaQueries> queries(p.ParseMediaQueries());
     return Css::Util::MediaAppliesToScreen(*queries);
   }
 
-  void ExpectMediaAppliesToScreen(const CssStringPiece& media_string,
+  void ExpectMediaAppliesToScreen(const StringPiece& media_string,
                                   bool expected) {
-    // Test CssStringPiece implementation.
+    // Test StringPiece implementation.
     EXPECT_EQ(expected, Css::Util::MediaAppliesToScreen(media_string))
         << "Media string: " << media_string;
 
@@ -107,7 +114,7 @@ TEST_F(MediaAppliesToScreenTest, ComplexMediaQueries) {
   // devices of type screen because we are acting like a CSS2 parser and
   // thus reading "screen" but ignoring the rest.
   EXPECT_TRUE(ParseMediaAppliesToScreen("screen and (color)"));
-  // Css::Util::MediaAppliesToScreen(const CssStringPiece&) does not parse the
+  // Css::Util::MediaAppliesToScreen(const StringPiece&) does not parse the
   // string, and so it's simple string comparison fails here.
   EXPECT_FALSE(Css::Util::MediaAppliesToScreen("screen and (color)"));
 

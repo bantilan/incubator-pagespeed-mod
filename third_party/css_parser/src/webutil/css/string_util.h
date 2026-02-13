@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 //
 // Useful string utils.
 
@@ -25,14 +26,16 @@
 
 #include <vector>
 
-#include "third_party/css_parser/src/strings/stringpiece.h"
+#include "strings/stringpiece.h"
 
 class UnicodeText;
 
 namespace Css {
 
 // Using isascii with signed chars is unfortunately undefined.
-inline bool IsAscii(char c) { return isascii(static_cast<unsigned char>(c)); }
+inline bool IsAscii(char c) {
+  return isascii(static_cast<unsigned char>(c));
+}
 
 // Convert a given block of chars to a double.
 bool ParseDouble(const char* str, int len, double* dest);
@@ -41,12 +44,12 @@ bool ParseDouble(const char* str, int len, double* dest);
 // Leaves non-ASCII chars alone.
 UnicodeText LowercaseAscii(const UnicodeText& in_text);
 
-bool StringCaseEquals(const CssStringPiece& a, const CssStringPiece& b);
+bool StringCaseEquals(const StringPiece& a, const StringPiece& b);
 // Compare ident's UTF8 bytes with string str ignoring ASCII case differences.
 // Meant to be used with static ASCII strings, Ex: StringCaseEquals(id, "foo").
-bool StringCaseEquals(const UnicodeText& ident, const CssStringPiece& str);
+bool StringCaseEquals(const UnicodeText& ident, const StringPiece& str);
 
-std::vector<CssStringPiece> SplitSkippingEmpty(CssStringPiece full, char delim);
+std::vector<StringPiece> SplitSkippingEmpty(StringPiece full, char delim);
 
 }  // namespace Css
 
