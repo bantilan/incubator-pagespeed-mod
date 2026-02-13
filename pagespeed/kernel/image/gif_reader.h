@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 #ifndef PAGESPEED_KERNEL_IMAGE_GIF_READER_H_
 #define PAGESPEED_KERNEL_IMAGE_GIF_READER_H_
 
@@ -31,12 +32,12 @@
 #include "pagespeed/kernel/image/scanline_utils.h"
 
 extern "C" {
-#include "external/giflib/gif_lib.h"
+#include "third_party/giflib/src/lib/gif_lib.h"
 
 #ifdef USE_SYSTEM_LIBPNG
-#include "png.h"  // NOLINT
+#include "png.h"                                               // NOLINT
 #else
-#include "external/libpng/png.h"
+#include "third_party/libpng/src/png.h"
 #endif
 }
 
@@ -56,14 +57,19 @@ FrameSpec::DisposalMethod GifDisposalToFrameSpecDisposal(int gif_disposal);
 class GifReader : public PngReaderInterface {
  public:
   explicit GifReader(MessageHandler* handler);
-  ~GifReader() override;
+  virtual ~GifReader();
 
-  bool ReadPng(const GoogleString& body, png_structp png_ptr,
-               png_infop info_ptr, int transforms,
-               bool require_opaque) const override;
+  virtual bool ReadPng(const GoogleString& body,
+                       png_structp png_ptr,
+                       png_infop info_ptr,
+                       int transforms,
+                       bool require_opaque) const;
 
-  bool GetAttributes(const GoogleString& body, int* out_width, int* out_height,
-                     int* out_bit_depth, int* out_color_type) const override;
+  virtual bool GetAttributes(const GoogleString& body,
+                             int* out_width,
+                             int* out_height,
+                             int* out_bit_depth,
+                             int* out_color_type) const;
 
  private:
   MessageHandler* message_handler_;
@@ -91,52 +97,54 @@ class GifReader : public PngReaderInterface {
 //   instantiate this class.
 class GifFrameReader : public MultipleFrameReader {
  public:
-  ~GifFrameReader() override;
+  virtual ~GifFrameReader();
 
-  ScanlineStatus Reset() override;
+  virtual ScanlineStatus Reset();
 
   // Initialize the reader with the given image stream. Note that
   // image_buffer must remain unchanged until the last call to
   // ReadNextScanlineWithStatus().
-  ScanlineStatus Initialize() override;
+  virtual ScanlineStatus Initialize();
 
-  bool HasMoreFrames() const override {
+  virtual bool HasMoreFrames() const {
     return (image_initialized_ && (next_frame_ < image_spec_.num_frames));
   }
 
-  bool HasMoreScanlines() const override {
+  virtual bool HasMoreScanlines() const {
     return (frame_initialized_ && (next_row_ < frame_spec_.height));
   }
 
-  ScanlineStatus PrepareNextFrame() override;
+  virtual ScanlineStatus PrepareNextFrame();
 
   // Return the next row of pixels. For non-progressive GIF,
   // ReadNextScanline will decode one row of pixels each time when it
   // is called, but for progressive GIF, ReadNextScanline will decode
   // the entire image at the first time when it is called.
-  ScanlineStatus ReadNextScanline(const void** out_scanline_bytes) override;
+  virtual ScanlineStatus ReadNextScanline(const void** out_scanline_bytes);
 
-  ScanlineStatus GetFrameSpec(FrameSpec* frame_spec) const override {
+  virtual ScanlineStatus GetFrameSpec(FrameSpec* frame_spec) const {
     if (frame_spec == NULL) {
       return PS_LOGGED_STATUS(PS_LOG_DFATAL, message_handler(),
-                              SCANLINE_STATUS_INVOCATION_ERROR, FRAME_GIFREADER,
+                              SCANLINE_STATUS_INVOCATION_ERROR,
+                              FRAME_GIFREADER,
                               "Unexpected NULL pointer.");
     }
     *frame_spec = frame_spec_;
     return ScanlineStatus(SCANLINE_STATUS_SUCCESS);
   }
 
-  ScanlineStatus GetImageSpec(ImageSpec* image_spec) const override {
+  virtual ScanlineStatus GetImageSpec(ImageSpec* image_spec) const {
     if (image_spec == NULL) {
       return PS_LOGGED_STATUS(PS_LOG_DFATAL, message_handler(),
-                              SCANLINE_STATUS_INVOCATION_ERROR, FRAME_GIFREADER,
+                              SCANLINE_STATUS_INVOCATION_ERROR,
+                              FRAME_GIFREADER,
                               "Unexpected NULL pointer.");
     }
     *image_spec = image_spec_;
     return ScanlineStatus(SCANLINE_STATUS_SUCCESS);
   }
 
-  ScanlineStatus set_quirks_mode(QuirksMode quirks_mode) override;
+  virtual ScanlineStatus set_quirks_mode(QuirksMode quirks_mode);
 
   // Apply the specified browser-specific tweaking of image_spec based
   // on the first frame's frame_spec and whether an explicit
@@ -156,7 +164,9 @@ class GifFrameReader : public MultipleFrameReader {
   // Clients should call this function to instantiate
   // GifFrameReader. This function is defined in read_image.cc.
   friend MultipleFrameReader* InstantiateImageFrameReader(
-      ImageFormat image_type, MessageHandler* handler, ScanlineStatus* status);
+      ImageFormat image_type,
+      MessageHandler* handler,
+      ScanlineStatus* status);
 
   // Used in gif_reader_test.cc and frame_interface_integration_test.cc.
   friend class TestGifFrameReader;
@@ -170,6 +180,7 @@ class GifFrameReader : public MultipleFrameReader {
   // case the GIF file does not employ transparency, we store the
   // special "index" value kNoTransparentIndex instead.
   static const int kNoTransparentIndex;
+
 
   // Decodes a progressive image.
   ScanlineStatus DecodeProgressiveGif();
@@ -234,7 +245,7 @@ class GifFrameReader : public MultipleFrameReader {
   // keeps track of the length of data that giflib has read. It is
   // initialized in Initialize() and is updated in
   // ReadNextScanlineWithStatus().
-  std::unique_ptr<ScopedGifStruct> gif_struct_;
+  net_instaweb::scoped_ptr<ScopedGifStruct> gif_struct_;
 
   // We need to know the palette size as we read each frame because,
   // in rare cases, images contain pixels referring to out-of-range

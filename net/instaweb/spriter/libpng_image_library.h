@@ -29,7 +29,7 @@ extern "C" {
 #ifdef USE_SYSTEM_LIBPNG
 #include "png.h"  // NOLINT
 #else
-#include "external/libpng/png.h"
+#include "third_party/libpng/src/png.h"
 #endif
 }  // extern "C"
 
@@ -48,19 +48,20 @@ namespace spriter {
 class LibpngImageLibrary : public ImageLibraryInterface {
  public:
   LibpngImageLibrary(const FilePath& base_input_path,
-                     const FilePath& base_output_path, Delegate* delegate);
-  ~LibpngImageLibrary() override {}
+                     const FilePath& base_output_path,
+                     Delegate* delegate);
+  virtual ~LibpngImageLibrary() {}
 
  protected:
   // Images are immutable rectangular regions of pixels.
   class Image : public ImageLibraryInterface::Image {
    public:
     // Takes ownership of rows.
-    Image(ImageLibraryInterface* lib, png_structp png_struct,
-          png_infop png_info, png_bytep* rows);
-    ~Image() override;
+    Image(ImageLibraryInterface* lib,
+          png_structp png_struct, png_infop png_info, png_bytep* rows);
+    virtual ~Image();
 
-    bool GetDimensions(int* out_width, int* out_height) const override;
+    virtual bool GetDimensions(int* out_width, int* out_height) const;
     const png_bytep* Rows() const;
 
    private:
@@ -72,7 +73,7 @@ class LibpngImageLibrary : public ImageLibraryInterface {
 
   // Read an image from disk.  Return NULL (after calling delegate
   // method) on error.  Caller owns the returned pointer.
-  ImageLibraryInterface::Image* ReadFromFile(const FilePath& path) override;
+  virtual ImageLibraryInterface::Image* ReadFromFile(const FilePath& path);
 
   // Canvases are mutable rectangles onto which a program may draw.
   // For now, we support stamping images into a canvas, and writing
@@ -80,11 +81,12 @@ class LibpngImageLibrary : public ImageLibraryInterface {
   class Canvas : public ImageLibraryInterface::Canvas {
    public:
     Canvas(ImageLibraryInterface* lib, const Delegate* d,
-           const GoogleString& base_out_path, int width, int height);
-    ~Canvas() override;
-    bool DrawImage(const ImageLibraryInterface::Image* image, int x,
-                   int y) override;
-    bool WriteToFile(const FilePath& write_path, ImageFormat format) override;
+           const GoogleString& base_out_path,
+           int width, int height);
+    virtual ~Canvas();
+    virtual bool DrawImage(const ImageLibraryInterface::Image* image, int x,
+                           int y);
+    virtual bool WriteToFile(const FilePath& write_path, ImageFormat format);
 
    private:
     const Delegate* delegate_;
@@ -95,7 +97,7 @@ class LibpngImageLibrary : public ImageLibraryInterface {
     DISALLOW_COPY_AND_ASSIGN(Canvas);
   };
 
-  ImageLibraryInterface::Canvas* CreateCanvas(int width, int height) override;
+  virtual ImageLibraryInterface::Canvas* CreateCanvas(int width, int height);
 
  private:
   friend class LibpngImageLibraryTest;

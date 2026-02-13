@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 #ifndef PAGESPEED_KERNEL_IMAGE_PNG_OPTIMIZER_H_
 #define PAGESPEED_KERNEL_IMAGE_PNG_OPTIMIZER_H_
 
@@ -27,21 +28,20 @@ extern "C" {
 #ifdef USE_SYSTEM_LIBPNG
 #include "png.h"  // NOLINT
 #else
-#include "external/libpng/png.h"
+#include "third_party/libpng/src/png.h"
 #endif
 }  // extern "C"
 
 #include <setjmp.h>
-
 #include <cstddef>
 
-#include "external/optipng/src/opngreduc/opngreduc.h"
 #include "pagespeed/kernel/base/basictypes.h"
 #include "pagespeed/kernel/base/scoped_ptr.h"
 #include "pagespeed/kernel/base/string.h"
 #include "pagespeed/kernel/image/image_util.h"
 #include "pagespeed/kernel/image/scanline_interface.h"
 #include "pagespeed/kernel/image/scanline_status.h"
+#include "third_party/optipng/src/opngreduc/opngreduc.h"
 
 namespace net_instaweb {
 class MessageHandler;
@@ -87,7 +87,10 @@ struct PngCompressParams : public ScanlineWriterConfig {
 // Helper that manages the lifetime of the png_ptr and info_ptr.
 class ScopedPngStruct {
  public:
-  enum Type { READ, WRITE };
+  enum Type {
+    READ,
+    WRITE
+  };
 
   ScopedPngStruct(Type type, MessageHandler* handler);
   ~ScopedPngStruct();
@@ -120,15 +123,19 @@ class PngReaderInterface {
   // is true, returns an image without an alpha channel if the
   // original image has no transparent pixels, and fails
   // otherwise. Returns true on success, false on failure.
-  virtual bool ReadPng(const GoogleString& body, png_structp png_ptr,
-                       png_infop info_ptr, int transforms,
+  virtual bool ReadPng(const GoogleString& body,
+                       png_structp png_ptr,
+                       png_infop info_ptr,
+                       int transforms,
                        bool require_opaque) const = 0;
 
   // Parse the contents of body, convert to a PNG, and populate the
   // PNG structures with the PNG representation. Returns true on
   // success, false on failure.
-  bool ReadPng(const GoogleString& body, png_structp png_ptr,
-               png_infop info_ptr, int transforms) const {
+  bool ReadPng(const GoogleString& body,
+               png_structp png_ptr,
+               png_infop info_ptr,
+               int transforms) const {
     return ReadPng(body, png_ptr, info_ptr, transforms, false);
   }
 
@@ -136,16 +143,19 @@ class PngReaderInterface {
   // number of bits per channel. out_color_type is one of the
   // PNG_COLOR_TYPE_* declared in png.h.
   // TODO(bmcquade): consider merging this with ImageAttributes.
-  virtual bool GetAttributes(const GoogleString& body, int* out_width,
-                             int* out_height, int* out_bit_depth,
+  virtual bool GetAttributes(const GoogleString& body,
+                             int* out_width,
+                             int* out_height,
+                             int* out_bit_depth,
                              int* out_color_type) const = 0;
 
   // Get the background color, in the form of 8-bit RGB triplets. Note
   // that if the underlying image uses a bit_depth other than 8, the
   // background color will be scaled to 8-bits per channel.
-  static bool GetBackgroundColor(png_structp png_ptr, png_infop info_ptr,
-                                 unsigned char* red, unsigned char* green,
-                                 unsigned char* blue, MessageHandler* handler);
+  static bool GetBackgroundColor(
+      png_structp png_ptr, png_infop info_ptr,
+      unsigned char *red, unsigned char* green, unsigned char* blue,
+      MessageHandler* handler);
 
   // Returns true if the alpha channel is actually a opaque. Returns
   // false otherwise. It is an error to call this method for an image
@@ -176,36 +186,36 @@ class PngReaderInterface {
 class PngScanlineReader : public ScanlineReaderInterface {
  public:
   explicit PngScanlineReader(MessageHandler* handler);
-  ~PngScanlineReader() override;
+  virtual ~PngScanlineReader();
 
   jmp_buf* GetJmpBuf();
 
   // This will only return false as a result of a longjmp due to an
   // unhandled libpng error.
-  bool Reset() override;
+  virtual bool Reset();
 
   // Initializes the read structures with the given input.
   bool InitializeRead(const PngReaderInterface& reader, const GoogleString& in);
   bool InitializeRead(const PngReaderInterface& reader, const GoogleString& in,
                       bool* is_opaque);
 
-  size_t GetBytesPerScanline() override;
-  bool HasMoreScanLines() override;
-  ScanlineStatus ReadNextScanlineWithStatus(void** out_scanline_bytes) override;
-  size_t GetImageHeight() override;
-  size_t GetImageWidth() override;
-  PixelFormat GetPixelFormat() override;
-  bool IsProgressive() override;
+  virtual size_t GetBytesPerScanline();
+  virtual bool HasMoreScanLines();
+  virtual ScanlineStatus ReadNextScanlineWithStatus(void** out_scanline_bytes);
+  virtual size_t GetImageHeight();
+  virtual size_t GetImageWidth();
+  virtual PixelFormat GetPixelFormat();
+  virtual bool IsProgressive();
 
   void set_transform(int transform);
   void set_require_opaque(bool require_opaque);
   int GetColorType();
-  bool GetBackgroundColor(unsigned char* red, unsigned char* green,
-                          unsigned char* blue);
+  bool GetBackgroundColor(
+      unsigned char* red, unsigned char* green, unsigned char* blue);
 
   // This is a no-op and should not be called.
-  ScanlineStatus InitializeWithStatus(const void* image_buffer,
-                                      size_t buffer_length) override;
+  virtual ScanlineStatus InitializeWithStatus(const void* image_buffer,
+                                              size_t buffer_length);
 
  private:
   ScopedPngStruct read_;
@@ -220,7 +230,8 @@ class PngScanlineReader : public ScanlineReaderInterface {
 class PngOptimizer {
  public:
   static bool OptimizePng(const PngReaderInterface& reader,
-                          const GoogleString& in, GoogleString* out,
+                          const GoogleString& in,
+                          GoogleString* out,
                           MessageHandler* handler);
 
   static bool OptimizePngBestCompression(const PngReaderInterface& reader,
@@ -238,7 +249,8 @@ class PngOptimizer {
   // all unnecessary chunks, and by choosing an optimal PNG encoding.
   // @return true on success, false on failure.
   bool CreateOptimizedPng(const PngReaderInterface& reader,
-                          const GoogleString& in, GoogleString* out,
+                          const GoogleString& in,
+                          GoogleString* out,
                           MessageHandler* handler);
 
   // Turn on best compression. Requires additional CPU but produces
@@ -265,13 +277,18 @@ class PngOptimizer {
 class PngReader : public PngReaderInterface {
  public:
   explicit PngReader(MessageHandler* handler);
-  ~PngReader() override;
-  bool ReadPng(const GoogleString& body, png_structp png_ptr,
-               png_infop info_ptr, int transforms,
-               bool require_opaque) const override;
+  virtual ~PngReader();
+  virtual bool ReadPng(const GoogleString& body,
+                       png_structp png_ptr,
+                       png_infop info_ptr,
+                       int transforms,
+                       bool require_opaque) const;
 
-  bool GetAttributes(const GoogleString& body, int* out_width, int* out_height,
-                     int* out_bit_depth, int* out_color_type) const override;
+  virtual bool GetAttributes(const GoogleString& body,
+                             int* out_width,
+                             int* out_height,
+                             int* out_bit_depth,
+                             int* out_color_type) const;
 
  private:
   MessageHandler* message_handler_;
@@ -296,32 +313,32 @@ class PngReader : public PngReaderInterface {
 class PngScanlineReaderRaw : public ScanlineReaderInterface {
  public:
   explicit PngScanlineReaderRaw(MessageHandler* handler);
-  ~PngScanlineReaderRaw() override;
+  virtual ~PngScanlineReaderRaw();
 
   // This will only return false as a result of a longjmp due to an
   // unhandled libpng error.
-  bool Reset() override;
+  virtual bool Reset();
 
   // Initialize the reader with the given image stream. Note that image_buffer
   // must remain unchanged until the last call to ReadNextScanline().
-  ScanlineStatus InitializeWithStatus(const void* image_buffer,
-                                      size_t buffer_length) override;
+  virtual ScanlineStatus InitializeWithStatus(const void* image_buffer,
+                                              size_t buffer_length);
 
   // Return the next row of pixels. For non-progressive PNG,
   // ReadNextScanlineWithStatus will decode one row of pixels each
   // time when it is called, but for progressive PNG,
   // ReadNextScanlineWithStatus will decode the entire image at the
   // first time when it is called.
-  ScanlineStatus ReadNextScanlineWithStatus(void** out_scanline_bytes) override;
+  virtual ScanlineStatus ReadNextScanlineWithStatus(void** out_scanline_bytes);
 
   // Return the number of bytes in a row (without padding).
-  size_t GetBytesPerScanline() override { return bytes_per_row_; }
+  virtual size_t GetBytesPerScanline() { return bytes_per_row_; }
 
-  bool HasMoreScanLines() override { return (row_ < height_); }
-  PixelFormat GetPixelFormat() override { return pixel_format_; }
-  size_t GetImageHeight() override { return height_; }
-  size_t GetImageWidth() override { return width_; }
-  bool IsProgressive() override { return is_progressive_; }
+  virtual bool HasMoreScanLines() { return (row_ < height_); }
+  virtual PixelFormat GetPixelFormat() { return pixel_format_; }
+  virtual size_t GetImageHeight() { return height_; }
+  virtual size_t GetImageWidth() {  return width_; }
+  virtual bool IsProgressive() { return is_progressive_; }
 
  private:
   PixelFormat pixel_format_;
@@ -333,11 +350,11 @@ class PngScanlineReaderRaw : public ScanlineReaderInterface {
   bool was_initialized_;
   net_instaweb::scoped_array<png_byte> image_buffer_;
   net_instaweb::scoped_array<png_bytep> row_pointers_;
-  std::unique_ptr<ScopedPngStruct> png_struct_;
+  net_instaweb::scoped_ptr<ScopedPngStruct> png_struct_;
   // png_input_ stores a pointer to the input image stream. It also keeps
   // tracking the length of data that libpng has read. It is initialized
   // in Initialize() and is updated in ReadNextScanline().
-  std::unique_ptr<ScanlineStreamInput> png_input_;
+  net_instaweb::scoped_ptr<ScanlineStreamInput> png_input_;
   MessageHandler* message_handler_;
 
   DISALLOW_COPY_AND_ASSIGN(PngScanlineReaderRaw);
@@ -348,34 +365,35 @@ class PngScanlineReaderRaw : public ScanlineReaderInterface {
 class PngScanlineWriter : public ScanlineWriterInterface {
  public:
   explicit PngScanlineWriter(MessageHandler* handler);
-  ~PngScanlineWriter() override;
+  virtual ~PngScanlineWriter();
 
   // Initialize the basic parameters for writing the image. Size of the image
   // must be 1-by-1 or larger.
-  ScanlineStatus InitWithStatus(const size_t width, const size_t height,
-                                PixelFormat pixel_format) override;
+  virtual ScanlineStatus InitWithStatus(const size_t width, const size_t height,
+                                        PixelFormat pixel_format);
 
   // Initialize additional parameters for writing the image using
   // 'params', which should be a PngCompressParams*. You can set
   // 'params' to NULL to use the default compression configuration.
-  ScanlineStatus InitializeWriteWithStatus(const void* params,
-                                           GoogleString* png_image) override;
+  virtual ScanlineStatus InitializeWriteWithStatus(const void* params,
+                                                   GoogleString* png_image);
 
   // Write a scanline with the data provided. Return false in case of error.
-  ScanlineStatus WriteNextScanlineWithStatus(
-      const void* scanline_bytes) override;
+  virtual ScanlineStatus WriteNextScanlineWithStatus(
+      const void *scanline_bytes);
 
   // Finalize write structure once all scanlines are written.
   // If FinalizeWriter() is called before all of the scanlines have been
   // written, the object will be reset to the initial state.
-  ScanlineStatus FinalizeWriteWithStatus() override;
+  virtual ScanlineStatus FinalizeWriteWithStatus();
 
  private:
   // Reset the object to the usable state.
   bool Reset();
 
   // Validate the input parameters.
-  bool Validate(const PngCompressParams* params, GoogleString* png_image);
+  bool Validate(const PngCompressParams* params,
+                GoogleString* png_image);
 
   bool DoBestCompression();
 
@@ -385,7 +403,7 @@ class PngScanlineWriter : public ScanlineWriterInterface {
   size_t bytes_per_row_;
   size_t row_;
   PixelFormat pixel_format_;
-  std::unique_ptr<ScopedPngStruct> png_struct_;
+  net_instaweb::scoped_ptr<ScopedPngStruct> png_struct_;
   bool was_initialized_;
   bool try_best_compression_;
   net_instaweb::scoped_array<unsigned char> pixel_buffer_;

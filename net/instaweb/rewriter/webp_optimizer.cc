@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 #include "net/instaweb/rewriter/public/webp_optimizer.h"
 
 #include <csetjmp>
@@ -33,8 +34,8 @@ extern "C" {
 #include "webp/decode.h"
 #include "webp/encode.h"
 #else
-#include "external/libwebp/src/webp/decode.h"
-#include "external/libwebp/src/webp/encode.h"
+#include "third_party/libwebp/src/webp/decode.h"
+#include "third_party/libwebp/src/webp/encode.h"
 #endif
 // TODO(jmaessen): open source imports & build of libwebp.
 }
@@ -43,7 +44,7 @@ extern "C" {
 #ifdef USE_SYSTEM_LIBJPEG
 #include "jpeglib.h"  // NOLINT
 #else
-#include "external/libjpeg_turbo/jpeglib.h"
+#include "third_party/libjpeg_turbo/src/jpeglib.h"
 #endif
 }
 
@@ -78,6 +79,7 @@ const J_DCT_METHOD fastest_dct_method = JDCT_IFAST;
 #endif
 #endif
 
+
 int GoogleStringWebpWriter(const uint8_t* data, size_t data_size,
                            const WebPPicture* const picture) {
   GoogleString* compressed_webp =
@@ -109,8 +111,8 @@ class WebpOptimizer {
   // 0/1 x and y offsets.  Note that all the arguments here are expected to be
   // constant except source_offset.
   int SampleAt(int plane, int source_offset, int x_offset, int y_offset) const {
-    return static_cast<int>(
-        pixels_[plane + source_offset + PixelOffset(x_offset, y_offset)]);
+    return static_cast<int>(pixels_[plane + source_offset +
+                                    PixelOffset(x_offset, y_offset)]);
   }
   bool DoReadJpegPixels(J_COLOR_SPACE color_space,
                         const GoogleString& original_jpeg);
@@ -141,17 +143,18 @@ class WebpOptimizer {
 WebpOptimizer::WebpOptimizer(MessageHandler* handler)
     : message_handler_(handler),
       reader_(handler),
-      pixels_(nullptr),
-      rows_(nullptr),
+      pixels_(NULL),
+      rows_(NULL),
       width_(0),
       height_(0),
       row_stride_(0),
-      progress_hook_(nullptr),
-      progress_hook_data_(nullptr) {}
+      progress_hook_(NULL),
+      progress_hook_data_(NULL) {
+}
 
 WebpOptimizer::~WebpOptimizer() {
   delete[] pixels_;
-  DCHECK(rows_ == nullptr);
+  DCHECK(rows_ == NULL);
 }
 
 // Does most of the work of ReadJpegPixels (see below); errors transfer control
@@ -206,9 +209,10 @@ bool WebpOptimizer::DoReadJpegPixels(J_COLOR_SPACE color_space,
   while (jpeg_decompress->output_scanline < height_) {
     // Try to read all remaining lines; we should get as many as the library is
     // comfortable handing over at one go.
-    int rows_read = jpeg_read_scanlines(
-        jpeg_decompress, rows_ + jpeg_decompress->output_scanline,
-        height_ - jpeg_decompress->output_scanline);
+    int rows_read =
+        jpeg_read_scanlines(jpeg_decompress,
+                            rows_ + jpeg_decompress->output_scanline,
+                            height_ - jpeg_decompress->output_scanline);
     if (rows_read == 0) {
       return false;
     }
@@ -228,12 +232,12 @@ bool WebpOptimizer::ReadJpegPixels(J_COLOR_SPACE color_space,
                                    const GoogleString& original_jpeg) {
   bool read_ok = DoReadJpegPixels(color_space, original_jpeg);
   delete[] rows_;
-  rows_ = nullptr;
+  rows_ = NULL;
   jpeg_decompress_struct* jpeg_decompress = reader_.decompress_struct();
   // NULL out the setjmp information stored by DoReadJpegPixels; there should be
   // no further decompression failures, and the stack would be invalid if there
   // were.
-  jpeg_decompress->client_data = nullptr;
+  jpeg_decompress->client_data = NULL;
   jpeg_destroy_decompress(jpeg_decompress);
   return read_ok;
 }
@@ -268,26 +272,30 @@ bool WebpOptimizer::WebPImportYUV(WebPPicture* const picture) {
     for (x = 0; x < half_width; ++x) {
       int source_offset = PixelOffset(2 * x, 2 * y);
       int picture_offset = x + y * picture->uv_stride;
-      int pixel_sum_u = SampleAt(kUPlane, source_offset, 0, 0) +
-                        SampleAt(kUPlane, source_offset, 1, 0) +
-                        SampleAt(kUPlane, source_offset, 0, 1) +
-                        SampleAt(kUPlane, source_offset, 1, 1);
+      int pixel_sum_u =
+          SampleAt(kUPlane, source_offset, 0, 0) +
+          SampleAt(kUPlane, source_offset, 1, 0) +
+          SampleAt(kUPlane, source_offset, 0, 1) +
+          SampleAt(kUPlane, source_offset, 1, 1);
       picture->u[picture_offset] = (2 + pixel_sum_u) >> 2;
-      int pixel_sum_v = SampleAt(kVPlane, source_offset, 0, 0) +
-                        SampleAt(kVPlane, source_offset, 1, 0) +
-                        SampleAt(kVPlane, source_offset, 0, 1) +
-                        SampleAt(kVPlane, source_offset, 1, 1);
+      int pixel_sum_v =
+          SampleAt(kVPlane, source_offset, 0, 0) +
+          SampleAt(kVPlane, source_offset, 1, 0) +
+          SampleAt(kVPlane, source_offset, 0, 1) +
+          SampleAt(kVPlane, source_offset, 1, 1);
       picture->v[picture_offset] = (2 + pixel_sum_v) >> 2;
     }
     // Note: x == half_width
     if (extra_width != 0) {
       int source_offset = PixelOffset(2 * x, 2 * y);
       int picture_offset = x + y * picture->uv_stride;
-      int pixel_sum_u = SampleAt(kUPlane, source_offset, 0, 0) +
-                        SampleAt(kUPlane, source_offset, 0, 1);
+      int pixel_sum_u =
+          SampleAt(kUPlane, source_offset, 0, 0) +
+          SampleAt(kUPlane, source_offset, 0, 1);
       picture->u[picture_offset] = (1 + pixel_sum_u) >> 1;
-      int pixel_sum_v = SampleAt(kVPlane, source_offset, 0, 0) +
-                        SampleAt(kVPlane, source_offset, 0, 1);
+      int pixel_sum_v =
+          SampleAt(kVPlane, source_offset, 0, 0) +
+          SampleAt(kVPlane, source_offset, 0, 1);
       picture->v[picture_offset] = (1 + pixel_sum_v) >> 1;
     }
   }
@@ -296,20 +304,24 @@ bool WebpOptimizer::WebPImportYUV(WebPPicture* const picture) {
     for (x = 0; x < half_width; ++x) {
       int source_offset = PixelOffset(2 * x, 2 * y);
       int picture_offset = x + y * picture->uv_stride;
-      int pixel_sum_u = SampleAt(kUPlane, source_offset, 0, 0) +
-                        SampleAt(kUPlane, source_offset, 1, 0);
+      int pixel_sum_u =
+          SampleAt(kUPlane, source_offset, 0, 0) +
+          SampleAt(kUPlane, source_offset, 1, 0);
       picture->u[picture_offset] = (1 + pixel_sum_u) >> 1;
-      int pixel_sum_v = SampleAt(kVPlane, source_offset, 0, 0) +
-                        SampleAt(kVPlane, source_offset, 1, 0);
+      int pixel_sum_v =
+          SampleAt(kVPlane, source_offset, 0, 0) +
+          SampleAt(kVPlane, source_offset, 1, 0);
       picture->v[picture_offset] = (1 + pixel_sum_v) >> 1;
     }
     // Note: x == half_width
     if (extra_width != 0) {
       int source_offset = PixelOffset(2 * x, 2 * y);
       int picture_offset = x + y * picture->uv_stride;
-      int pixel_sum_u = SampleAt(kUPlane, source_offset, 0, 0);
+      int pixel_sum_u =
+          SampleAt(kUPlane, source_offset, 0, 0);
       picture->u[picture_offset] = pixel_sum_u;
-      int pixel_sum_v = SampleAt(kVPlane, source_offset, 0, 0);
+      int pixel_sum_v =
+          SampleAt(kVPlane, source_offset, 0, 0);
       picture->v[picture_offset] = pixel_sum_v;
     }
   }
@@ -324,16 +336,18 @@ int WebpOptimizer::ProgressHook(int percent, const WebPPicture* picture) {
 }
 
 // Main body of transcode.
-bool WebpOptimizer::CreateOptimizedWebp(const GoogleString& original_jpeg,
-                                        int configured_quality,
-                                        WebpProgressHook progress_hook,
-                                        void* progress_hook_data,
-                                        GoogleString* compressed_webp) {
+bool WebpOptimizer::CreateOptimizedWebp(
+    const GoogleString& original_jpeg,
+    int configured_quality,
+    WebpProgressHook progress_hook,
+    void* progress_hook_data,
+    GoogleString* compressed_webp) {
   // Begin by making sure we can create a webp image at all:
   WebPPicture picture;
   WebPConfig config;
-  int input_quality = JpegUtils::GetImageQualityFromImage(
-      original_jpeg.data(), original_jpeg.size(), message_handler_);
+  int input_quality = JpegUtils::GetImageQualityFromImage(original_jpeg.data(),
+                                                          original_jpeg.size(),
+                                                          message_handler_);
 
   if (!WebPPictureInit(&picture) || !WebPConfigInit(&config)) {
     // Version mismatch.
@@ -349,12 +363,12 @@ bool WebpOptimizer::CreateOptimizedWebp(const GoogleString& original_jpeg,
   int output_quality = configured_quality;
 
   if (input_quality != kNoQualityGiven && input_quality < configured_quality) {
-    output_quality = input_quality;
-  } else {
+      output_quality =  input_quality;
+    } else {
     // If JpegUtils::GetImageQualityFromImage couldn't figure
     // out the quality or if the input quality is more than the configured
     // quality, use configured quality to rewrite.
-    output_quality = configured_quality;
+      output_quality = configured_quality;
   }
 
   if (!WebPConfigPreset(&config, WEBP_PRESET_DEFAULT, output_quality)) {
@@ -388,7 +402,7 @@ bool WebpOptimizer::CreateOptimizedWebp(const GoogleString& original_jpeg,
   picture.custom_ptr = static_cast<void*>(compressed_webp);
   picture.width = width_;
   picture.height = height_;
-  if (progress_hook != nullptr) {
+  if (progress_hook != NULL) {
     picture.progress_hook = ProgressHook;
     picture.user_data = this;
     progress_hook_ = progress_hook;
@@ -408,7 +422,7 @@ bool WebpOptimizer::CreateOptimizedWebp(const GoogleString& original_jpeg,
   // We're done with the original pixels, so clean them up.  If an error occurs,
   // this cleanup will happen in the destructor instead.
   delete[] pixels_;
-  pixels_ = nullptr;
+  pixels_ = NULL;
 
   // Now we need to take picture and WebP encode it.
   bool result = WebPEncode(&config, &picture);
@@ -451,8 +465,8 @@ static bool WebPDecBufferToPicture(const WebPDecBuffer* const buf,
   return true;
 }
 
-bool ReduceWebpImageQuality(const GoogleString& original_webp, int quality,
-                            GoogleString* compressed_webp) {
+bool ReduceWebpImageQuality(const GoogleString& original_webp,
+                            int quality, GoogleString* compressed_webp) {
   if (quality < 1) {
     // No compression.
     *compressed_webp = original_webp;
