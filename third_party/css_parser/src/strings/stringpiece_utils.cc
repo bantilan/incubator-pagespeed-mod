@@ -17,15 +17,14 @@
  * under the License.
  */
 
-#include "third_party/css_parser/src/strings/stringpiece_utils.h"
+#include "strings/stringpiece_utils.h"
 
 #include <vector>
-
-#include "third_party/css_parser/src/strings/ascii_ctype.h"
+#include "strings/ascii_ctype.h"
 
 namespace strings {
 
-int RemoveLeadingWhitespace(CssStringPiece* text) {
+int RemoveLeadingWhitespace(StringPiece* text) {
   int count = 0;
   const char* ptr = text->data();
   while (count < text->size() && ascii_isspace(*ptr)) {
@@ -36,7 +35,7 @@ int RemoveLeadingWhitespace(CssStringPiece* text) {
   return count;
 }
 
-int RemoveTrailingWhitespace(CssStringPiece* text) {
+int RemoveTrailingWhitespace(StringPiece* text) {
   int count = 0;
   const char* ptr = text->data() + text->size() - 1;
   while (count < text->size() && ascii_isspace(*ptr)) {
@@ -47,7 +46,7 @@ int RemoveTrailingWhitespace(CssStringPiece* text) {
   return count;
 }
 
-int RemoveWhitespaceContext(CssStringPiece* text) {
+int RemoveWhitespaceContext(StringPiece* text) {
   // use RemoveLeadingWhitespace() and RemoveTrailingWhitespace() to do the job
   return (RemoveLeadingWhitespace(text) + RemoveTrailingWhitespace(text));
 }

@@ -17,21 +17,21 @@
  * under the License.
  */
 
-// Utility functions for operating on CssStringPieces
+
+// Utility functions for operating on StringPieces
 // Collected here for convenience
 
 #ifndef STRINGS_STRINGPIECE_UTILS_H_
 #define STRINGS_STRINGPIECE_UTILS_H_
 
 #include <vector>
-
-#include "third_party/css_parser/src/strings/stringpiece.h"
+#include "strings/stringpiece.h"
 
 namespace strings {
 
 // removes leading and trailing ascii_isspace() chars. Returns
 // number of chars removed
-int RemoveWhitespaceContext(CssStringPiece* text);
+int RemoveWhitespaceContext(StringPiece* text);
 
 }  // namespace strings
 
