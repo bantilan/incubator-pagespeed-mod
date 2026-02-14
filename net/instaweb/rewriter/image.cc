@@ -236,8 +236,9 @@ bool ConvertToAvifExternal(const GoogleString& input_image,
   if (ok) {
     int clamped_quality = std::max(0, std::min(100, configured_quality));
     int cq_level = 63 - ((clamped_quality * 63) / 100);
+    // avifenc 1.0.x does not support --quiet; keep stdout/stderr redirected.
     GoogleString cmd = StringPrintf(
-        "avifenc --quiet --jobs 1 --min %d --max %d \"%s\" \"%s\" >/dev/null 2>&1",
+        "avifenc --jobs 1 --min %d --max %d \"%s\" \"%s\" >/dev/null 2>&1",
         cq_level, cq_level, input_path.c_str(), output_template);
     ok = (system(cmd.c_str()) == 0);
   }
