@@ -149,17 +149,14 @@ void PrioritizeLcpImagesFilter::PrioritizeImage(
   if (fetchpriority_attr != NULL) {
     fetchpriority_attr->SetValue("high");
   } else {
-    element->AddAttribute(HtmlName::kFetchpriority, "high",
-                          HtmlElement::DOUBLE_QUOTE);
+    driver()->AddAttribute(element, HtmlName::kFetchpriority, "high");
   }
 
   if (element->FindAttribute(HtmlName::kDataPagespeedNoDefer) == NULL) {
-    element->AddAttribute(HtmlName::kDataPagespeedNoDefer, "1",
-                          HtmlElement::DOUBLE_QUOTE);
+    driver()->AddAttribute(element, HtmlName::kDataPagespeedNoDefer, "1");
   }
   if (element->FindAttribute(HtmlName::kPagespeedNoDefer) == NULL) {
-    element->AddAttribute(HtmlName::kPagespeedNoDefer, "1",
-                          HtmlElement::DOUBLE_QUOTE);
+    driver()->AddAttribute(element, HtmlName::kPagespeedNoDefer, "1");
   }
 
   // Insert preload right before the prioritized image so discovery happens in
