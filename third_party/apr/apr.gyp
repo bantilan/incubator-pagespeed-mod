@@ -37,6 +37,7 @@
           'direct_dependent_settings': {
             'include_dirs': [
               '<(apr_src_root)/include',
+              '<(apr_src_root)/include/private',
               '<(apr_os_include)',
               '<(apr_gen_arch_root)/include',
             ],

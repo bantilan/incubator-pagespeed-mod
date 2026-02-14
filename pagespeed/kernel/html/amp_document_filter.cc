@@ -26,6 +26,8 @@
 
 namespace net_instaweb {
 
+constexpr char AmpDocumentFilter::kUtf8LightningBolt[];
+
 const char AmpDocumentFilter::kInvalidAmpDirectiveComment[] =
     "Invalid AMP directive -- will be ignored and will probably "
     "be rejected by the AMP validator.";

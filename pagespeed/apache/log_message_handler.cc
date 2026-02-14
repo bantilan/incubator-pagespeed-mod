@@ -61,9 +61,11 @@ int GetApacheLogLevel(int severity) {
 }
 
 bool LogMessageHandler(int severity, const char* file, int line,
-                       const GoogleString& str) {
+                       size_t message_start, const GoogleString& str) {
   const int this_log_level = GetApacheLogLevel(severity);
-  GoogleString message(str);
+  GoogleString message = (message_start < str.size())
+                             ? str.substr(message_start)
+                             : str;
   // Trim the newline off the end of the message string.
   size_t last_msg_character_index = message.length() - 1;
   if (message[last_msg_character_index] == '\n') {
@@ -88,20 +90,9 @@ namespace net_instaweb {
 
 namespace log_message_handler {
 
-class ApacheGLogSink : public PageSpeedGLogSink {
-  void send(google::LogSeverity severity, const char* full_filename,
-            const char* base_filename, int line, const struct tm* tm_time,
-            const char* message, size_t message_len) override {
-    LogMessageHandler(severity, base_filename, line,
-                      std::string(message, message_len));
-  }
-};
-
-std::unique_ptr<ApacheGLogSink> apache_glog_sink = nullptr;
-
 void Install(apr_pool_t* pool) {
   log_pool = pool;
-  apache_glog_sink = std::make_unique<ApacheGLogSink>();
+  logging::SetLogMessageHandler(LogMessageHandler);
 }
 
 void ShutDown() {
@@ -109,7 +100,7 @@ void ShutDown() {
     delete mod_pagespeed_version;
     mod_pagespeed_version = nullptr;
   }
-  apache_glog_sink.release();
+  logging::SetLogMessageHandler(nullptr);
 }
 
 // What Google level of logs to display when Apache LogLevel is Debug.
@@ -134,7 +125,7 @@ void AddServerConfig(const server_rec* server, const StringPiece& version) {
 
   // Get VLOG(x) and above if LogLevel is set to Debug.
   if (log_level_cutoff >= APLOG_DEBUG) {
-    apache_glog_sink->setMinLogLevel(kDebugLogLevel);
+    logging::SetMinLogLevel(kDebugLogLevel);
   }
   if (mod_pagespeed_version == nullptr) {
     mod_pagespeed_version = new GoogleString(version.as_string());

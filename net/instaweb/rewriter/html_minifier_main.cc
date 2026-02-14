@@ -98,7 +98,8 @@ bool HtmlMinifier::MinifyHtml(const GoogleString& input_name,
   net_instaweb::StringWriter string_writer(output);
   html_writer_filter_.set_writer(&string_writer);
 
-  GoogleString url = StrCat("http://html_minifier.com/", input_name, ".html");
+  GoogleString url =
+      net_instaweb::StrCat("http://html_minifier.com/", input_name, ".html");
   html_parse_.StartParse(url);
   html_parse_.ParseText(input.data(), input.size());
   html_parse_.FinishParse();

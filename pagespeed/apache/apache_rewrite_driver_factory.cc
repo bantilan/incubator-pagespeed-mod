@@ -21,13 +21,13 @@
 
 #include <unistd.h>
 
-#include "ap_mpm.h"
 #include "apr_pools.h"
 #include "base/logging.h"
 #include "net/instaweb/rewriter/public/rewrite_driver_factory.h"
 #include "net/instaweb/rewriter/public/server_context.h"
 #include "pagespeed/apache/apache_config.h"
 #include "pagespeed/apache/apache_httpd_includes.h"
+#include "ap_mpm.h"
 #include "pagespeed/apache/apache_message_handler.h"
 #include "pagespeed/apache/apache_server_context.h"
 #include "pagespeed/apache/apache_thread_system.h"

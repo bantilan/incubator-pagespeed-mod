@@ -107,8 +107,7 @@ void MockUrlFetcher::SetConditionalResponse(
 }
 
 void MockUrlFetcher::Clear() {
-  STLDeleteContainerPairSecondPointers(response_map_.begin(),
-                                       response_map_.end());
+  STLDeleteValues(&response_map_);
   response_map_.clear();
   // We don't have to protect response_map_ here, since only single
   // setup/teardown would be called at a time.
