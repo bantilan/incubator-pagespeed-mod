@@ -187,11 +187,8 @@ class GoogleUrl {
   // Returns the default port for given scheme, or url::PORT_UNSPECIFIED
   // if the scheme isn't recognized. Scheme is expected to be in lowercase.
   static int DefaultPortForScheme(StringPiece scheme);
-
-  // Compatibility helper for older callsites that treat unspecified/invalid
-  // port values as equivalent for URL matching purposes.
   static bool isPortGurlUnspecified(int port) {
-    return (port == url::PORT_UNSPECIFIED) || (port == url::PORT_INVALID);
+    return port == url::PORT_UNSPECIFIED;
   }
 
   bool is_empty() const { return gurl_.is_empty(); }
