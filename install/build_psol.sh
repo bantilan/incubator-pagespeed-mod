@@ -60,7 +60,16 @@ echo Building PSOL binaries...
 
 MAKE_ARGS=(V=1 BUILDTYPE=$buildtype)
 
-run_with_log log/gyp.log python build/gyp_chromium --depth=.
+if command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=python
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=python3
+else
+  echo "Neither python nor python3 was found in PATH." >&2
+  exit 1
+fi
+
+run_with_log log/gyp.log "$PYTHON_BIN" build/gyp_chromium --depth=.
 
 if $run_tests; then
   run_with_log log/psol_build.log make "${MAKE_ARGS[@]}" \

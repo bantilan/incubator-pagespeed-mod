@@ -82,7 +82,7 @@ class RedisCache : public CacheInterface {
   RedisCache(StringPiece host, int port, ThreadSystem* thread_system,
              MessageHandler* message_handler, Timer* timer,
              int64 reconnection_delay_ms, int64 timeout_us,
-             Statistics* stats, int database_index);
+             Statistics* stats, int database_index, int ttl_sec = -1);
   ~RedisCache() override { ShutDown(); }
 
   static void InitStats(Statistics* stats);
@@ -282,6 +282,7 @@ class RedisCache : public CacheInterface {
   Connection* main_connection_;
 
   const int database_index_;
+  const int ttl_sec_;
 
   friend class RedisCacheTest;
   DISALLOW_COPY_AND_ASSIGN(RedisCache);
