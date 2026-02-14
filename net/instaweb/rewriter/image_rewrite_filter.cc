@@ -465,14 +465,14 @@ class ImageRewriteFilter::Context::InvokeRewriteFunction
   virtual ~InvokeRewriteFunction() { }
 
  protected:
-  virtual void RunImpl(scoped_ptr<ExpensiveOperationContext>* context) {
+  void RunImpl(std::unique_ptr<ExpensiveOperationContext>* context) override {
     RewriteResult result = filter_->RewriteLoadedResourceImpl(
         context_, input_resource_, output_resource_);
     (*context)->Done();
     context_->RewriteDone(result, 0);
   }
 
-  virtual void CancelImpl() {
+  void CancelImpl() override {
     filter_->ReportDroppedRewrite();
     filter_->InfoAndTrace(context_, "%s: Too busy to rewrite image.",
                           input_resource_->url().c_str());
