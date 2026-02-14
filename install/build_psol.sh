@@ -60,6 +60,17 @@ echo Building PSOL binaries...
 
 MAKE_ARGS=(V=1 BUILDTYPE=$buildtype)
 
+# Compatibility patch for modern glibc where memmem is already declared.
+# Older aprutil code ships a fallback with an incompatible signature.
+APRUTIL_BRIGADE_C="third_party/aprutil/src/buckets/apr_brigade.c"
+if [ -f "$APRUTIL_BRIGADE_C" ]; then
+  sed -i \
+    -e 's/static const void \*/static void */' \
+    -e 's/\bmemmem(const void \*_hay/aprutil_memmem(const void *_hay/' \
+    -e 's/\bpos = memmem(/pos = aprutil_memmem(/' \
+    "$APRUTIL_BRIGADE_C"
+fi
+
 if command -v python >/dev/null 2>&1; then
   PYTHON_BIN=python
 elif command -v python3 >/dev/null 2>&1; then
