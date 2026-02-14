@@ -188,6 +188,12 @@ class GoogleUrl {
   // if the scheme isn't recognized. Scheme is expected to be in lowercase.
   static int DefaultPortForScheme(StringPiece scheme);
 
+  // Compatibility helper for older callsites that treat unspecified/invalid
+  // port values as equivalent for URL matching purposes.
+  static bool isPortGurlUnspecified(int port) {
+    return (port == url::PORT_UNSPECIFIED) || (port == url::PORT_INVALID);
+  }
+
   bool is_empty() const { return gurl_.is_empty(); }
   bool has_scheme() const { return gurl_.has_scheme(); }
   bool has_path() const { return gurl_.has_path(); }
