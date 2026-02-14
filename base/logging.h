@@ -19,27 +19,18 @@
 
 #pragma once
 
-#include "glog/logging.h"
-
-namespace logging {
-constexpr int LOG_INFO = google::GLOG_INFO;
-constexpr int LOG_ERROR = google::GLOG_ERROR;
-constexpr int LOG_WARNING = google::GLOG_WARNING;
-constexpr int LOG_FATAL = google::GLOG_FATAL;
-}  // namespace logging
+#include "third_party/chromium/src/base/logging.h"
 
 namespace net_instaweb {
 
-class PageSpeedGLogSink : public google::LogSink {
+// Legacy compatibility shim. Historical code instantiated this type to control
+// logging sink behavior via glog; modern builds route through Chromium logging.
+class PageSpeedGLogSink {
  public:
   PageSpeedGLogSink();
 
-  void send(google::LogSeverity severity, const char* full_filename,
-            const char* base_filename, int line, const struct tm* tm_time,
-            const char* message, size_t message_len) override;
-
   void setMinLogLevel(int) {
-    // XXX(oschaaf): check callees and make this take effect.
+    // No-op in the Chromium logging path.
   }
 };
 

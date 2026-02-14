@@ -55,7 +55,7 @@ class MockCentralControllerCallback
 
   virtual ~MockCentralControllerCallback() {}
 
-  virtual void RunImpl(scoped_ptr<MockCallbackHandle>* handle) {
+  virtual void RunImpl(std::unique_ptr<MockCallbackHandle>* handle) {
     ++counts_->run_called;
     if (steal_pointer_) {
       counts_->handle.reset(handle->release());

@@ -58,9 +58,11 @@ int main(int argc, char** argv) {
   const char* output_dir = argv[2];
   const char* html_name = argv[3];
 
-  GoogleString url = StrCat("http://test.com/", html_name);
-  GoogleString input_file_path = StrCat(input_dir, "/", html_name);
-  GoogleString output_file_path = StrCat(output_dir, "/", html_name);
+  GoogleString url = net_instaweb::StrCat("http://test.com/", html_name);
+  GoogleString input_file_path =
+      net_instaweb::StrCat(input_dir, "/", html_name);
+  GoogleString output_file_path =
+      net_instaweb::StrCat(output_dir, "/", html_name);
   GoogleString html_input_buffer, html_output_buffer;
   net_instaweb::FileSystem* file_system = static_rewriter.file_system();
   net_instaweb::MessageHandler* message_handler =
