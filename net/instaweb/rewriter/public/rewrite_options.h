@@ -122,6 +122,7 @@ class RewriteOptions {
     kConvertGifToPng,
     kConvertJpegToProgressive,
     kConvertJpegToWebp,
+    kConvertToAvif,
     kConvertMetaTags,
     kConvertPngToJpeg,
     kConvertToWebpAnimated,
@@ -1137,7 +1138,8 @@ class RewriteOptions {
 
   // Checks if either of the optimizing rewrite options are ON and it includes
   // kRecompressJPeg, kRecompressPng, kRecompressWebp, kConvertGifToPng,
-  // kConvertJpegToWebp, kConvertPngToJpeg, and kConvertToWebpLossless.
+  // kConvertJpegToWebp, kConvertToAvif, kConvertPngToJpeg, and
+  // kConvertToWebpLossless.
   bool ImageOptimizationEnabled() const;
 
   explicit RewriteOptions(ThreadSystem* thread_system);

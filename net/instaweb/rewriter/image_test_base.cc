@@ -60,6 +60,7 @@ Image* ImageTestBase::ImageFromString(
   } else {
     image_options->preferred_webp = pagespeed::image_compression::WEBP_NONE;
   }
+  image_options->convert_to_avif = (output_type == IMAGE_AVIF);
   image_options->jpeg_quality = -1;
   image_options->progressive_jpeg = progressive;
   image_options->convert_png_to_jpeg =  output_type == IMAGE_JPEG;

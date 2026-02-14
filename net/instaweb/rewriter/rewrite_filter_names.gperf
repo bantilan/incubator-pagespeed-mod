@@ -79,6 +79,7 @@ struct FilterMap {
 "convert_gif_to_png",                RewriteOptions::kConvertGifToPng
 "convert_jpeg_to_progressive",       RewriteOptions::kConvertJpegToProgressive
 "convert_jpeg_to_webp",              RewriteOptions::kConvertJpegToWebp
+"convert_to_avif",                   RewriteOptions::kConvertToAvif
 "convert_meta_tags",                 RewriteOptions::kConvertMetaTags
 "convert_png_to_jpeg",               RewriteOptions::kConvertPngToJpeg
 "convert_to_webp_animated",          RewriteOptions::kConvertToWebpAnimated

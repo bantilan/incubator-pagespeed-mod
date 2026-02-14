@@ -53,6 +53,7 @@ TEST_F(ContentTypeTest, TestExtensions) {
   EXPECT_EQ(ContentType::kJpeg,       ExtToType(".jpeg"));
   EXPECT_EQ(ContentType::kSwf,        ExtToType(".swf"));
   EXPECT_EQ(ContentType::kWebp,       ExtToType(".webp"));
+  EXPECT_EQ(ContentType::kAvif,       ExtToType(".avif"));
   EXPECT_EQ(ContentType::kIco,        ExtToType(".ico"));
   EXPECT_EQ(ContentType::kJson,       ExtToType(".json"));
   EXPECT_EQ(ContentType::kSourceMap,  ExtToType(".map"));
@@ -93,6 +94,7 @@ TEST_F(ContentTypeTest, TestMimeType) {
   EXPECT_EQ(ContentType::kJpeg,       MimeToType("image/jpg"));
   EXPECT_EQ(ContentType::kSwf,   MimeToType("application/x-shockwave-flash"));
   EXPECT_EQ(ContentType::kWebp,       MimeToType("image/webp"));
+  EXPECT_EQ(ContentType::kAvif,       MimeToType("image/avif"));
   EXPECT_EQ(ContentType::kIco,        MimeToType("image/x-icon"));
   EXPECT_EQ(ContentType::kIco,        MimeToType("image/vnd.microsoft.icon"));
   EXPECT_EQ(ContentType::kVideo,      MimeToType("video/3gp"));
@@ -133,6 +135,7 @@ TEST_F(ContentTypeTest, ConstantSanityCheck) {
   EXPECT_EQ(ContentType::kJpeg, kContentTypeJpeg.type());
   EXPECT_EQ(ContentType::kSwf, kContentTypeSwf.type());
   EXPECT_EQ(ContentType::kWebp, kContentTypeWebp.type());
+  EXPECT_EQ(ContentType::kAvif, kContentTypeAvif.type());
   EXPECT_EQ(ContentType::kIco, kContentTypeIco.type());
   EXPECT_EQ(ContentType::kPdf, kContentTypePdf.type());
   EXPECT_EQ(ContentType::kOctetStream, kContentTypeBinaryOctetStream.type());

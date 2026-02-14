@@ -95,6 +95,7 @@ class Image {
           convert_gif_to_png(false),
           convert_png_to_jpeg(false),
           convert_jpeg_to_webp(false),
+          convert_to_avif(false),
           recompress_jpeg(false),
           recompress_png(false),
           recompress_webp(false),
@@ -122,6 +123,7 @@ class Image {
     bool convert_gif_to_png;
     bool convert_png_to_jpeg;
     bool convert_jpeg_to_webp;
+    bool convert_to_avif;
     bool recompress_jpeg;
     bool recompress_png;
     bool recompress_webp;

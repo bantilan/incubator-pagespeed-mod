@@ -245,7 +245,8 @@ void ImageUrlEncoder::SetLibWebpLevel(
   } else if (request_properties.SupportsWebpRewrittenUrls() &&
              (options.Enabled(RewriteOptions::kRecompressWebp) ||
               options.Enabled(RewriteOptions::kConvertToWebpLossless) ||
-              options.Enabled(RewriteOptions::kConvertJpegToWebp))) {
+              options.Enabled(RewriteOptions::kConvertJpegToWebp) ||
+              options.Enabled(RewriteOptions::kConvertToAvif))) {
     libwebp_level = ResourceContext::LIBWEBP_LOSSY_ONLY;
   }
   resource_context->set_libwebp_level(libwebp_level);

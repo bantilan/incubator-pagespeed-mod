@@ -48,6 +48,7 @@ using pagespeed::image_compression::IMAGE_JPEG;
 using pagespeed::image_compression::IMAGE_PNG;
 using pagespeed::image_compression::IMAGE_GIF;
 using pagespeed::image_compression::IMAGE_WEBP;
+using pagespeed::image_compression::IMAGE_AVIF;
 
 // Pixel formats.
 using pagespeed::image_compression::UNSUPPORTED;
@@ -77,9 +78,9 @@ TEST(ImageUtilTest, ImageFormatToMimeTypeString) {
   EXPECT_STREQ("image/png", ImageFormatToMimeTypeString(IMAGE_PNG));
   EXPECT_STREQ("image/gif", ImageFormatToMimeTypeString(IMAGE_GIF));
   EXPECT_STREQ("image/webp", ImageFormatToMimeTypeString(IMAGE_WEBP));
-  EXPECT_STREQ("image/webp", ImageFormatToMimeTypeString(IMAGE_WEBP));
+  EXPECT_STREQ("image/avif", ImageFormatToMimeTypeString(IMAGE_AVIF));
   EXPECT_STREQ(kInvalidImageFormat,
-               ImageFormatToMimeTypeString(static_cast<ImageFormat>(5)));
+               ImageFormatToMimeTypeString(static_cast<ImageFormat>(6)));
 }
 
 TEST(ImageUtilTest, ImageFormatToString) {
@@ -88,8 +89,9 @@ TEST(ImageUtilTest, ImageFormatToString) {
   EXPECT_STREQ("IMAGE_PNG", ImageFormatToString(IMAGE_PNG));
   EXPECT_STREQ("IMAGE_GIF", ImageFormatToString(IMAGE_GIF));
   EXPECT_STREQ("IMAGE_WEBP", ImageFormatToString(IMAGE_WEBP));
+  EXPECT_STREQ("IMAGE_AVIF", ImageFormatToString(IMAGE_AVIF));
   EXPECT_STREQ(kInvalidImageFormat,
-               ImageFormatToMimeTypeString(static_cast<ImageFormat>(5)));
+               ImageFormatToMimeTypeString(static_cast<ImageFormat>(6)));
 }
 
 TEST(ImageUtilTest, GetPixelFormatString) {

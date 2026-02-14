@@ -669,7 +669,8 @@ void InPlaceRewriteContext::StartFetchReconstructionParent() {
 
 bool InPlaceRewriteContext::InPlaceOptimizeForBrowserEnabled() const {
   return Options()->Enabled(RewriteOptions::kInPlaceOptimizeForBrowser) &&
-         Options()->Enabled(RewriteOptions::kConvertJpegToWebp);
+         (Options()->Enabled(RewriteOptions::kConvertJpegToWebp) ||
+          Options()->Enabled(RewriteOptions::kConvertToAvif));
 }
 
 // TODO(jmaessen): Sharpen this up.  Mark CSS vary:User-Agent because it doesn't
@@ -698,6 +699,7 @@ void InPlaceRewriteContext::AddVaryIfRequired(const CachedResult& cached_result,
     if (ImageUrlEncoder::AllowVaryOnUserAgent(*Options(), request_properties) &&
         (image_type != IMAGE_UNKNOWN) &&
         (Options()->Enabled(RewriteOptions::kConvertJpegToWebp) ||
+         Options()->Enabled(RewriteOptions::kConvertToAvif) ||
          Options()->Enabled(RewriteOptions::kConvertToWebpLossless) ||
          Options()->Enabled(RewriteOptions::kConvertToWebpAnimated) ||
          Options()->HasValidSmallScreenQualities())) {
@@ -708,8 +710,10 @@ void InPlaceRewriteContext::AddVaryIfRequired(const CachedResult& cached_result,
       new_vary = HttpAttributes::kUserAgent;
     } else if (ImageUrlEncoder::AllowVaryOnAccept(*Options(),
                                                   request_properties) &&
-               (image_type == IMAGE_JPEG || image_type == IMAGE_WEBP) &&
-               Options()->Enabled(RewriteOptions::kConvertJpegToWebp)) {
+               (image_type == IMAGE_JPEG || image_type == IMAGE_WEBP ||
+                image_type == IMAGE_AVIF) &&
+               (Options()->Enabled(RewriteOptions::kConvertJpegToWebp) ||
+                Options()->Enabled(RewriteOptions::kConvertToAvif))) {
       // If we are allowed to vary on Accept header and the image has been
       // successfully optimized to lossy format, we need to add "vary: accept",
       // since we might have used the Accept header for determining image
@@ -719,6 +723,7 @@ void InPlaceRewriteContext::AddVaryIfRequired(const CachedResult& cached_result,
 
     depends_on_save_data = (image_type == IMAGE_JPEG) ||
                            (image_type == IMAGE_WEBP) ||
+                           (image_type == IMAGE_AVIF) ||
                            (image_type == IMAGE_WEBP_ANIMATED);
 
   } else if (type->IsCss()) {
@@ -727,6 +732,7 @@ void InPlaceRewriteContext::AddVaryIfRequired(const CachedResult& cached_result,
     // so we must Vary: User-Agent.
     if (Options()->Enabled(RewriteOptions::kRewriteCss) &&
         (Options()->Enabled(RewriteOptions::kConvertJpegToWebp) ||
+         Options()->Enabled(RewriteOptions::kConvertToAvif) ||
          Options()->Enabled(RewriteOptions::kConvertToWebpAnimated) ||
          Options()->Enabled(RewriteOptions::kConvertToWebpLossless))) {
       new_vary = HttpAttributes::kUserAgent;

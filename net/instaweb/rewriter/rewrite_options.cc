@@ -581,6 +581,7 @@ const RewriteOptions::Filter kCoreFilterSet[] = {
   RewriteOptions::kConvertGifToPng,                // rewrite_images
   RewriteOptions::kConvertJpegToProgressive,       // rewrite_images
   RewriteOptions::kConvertJpegToWebp,              // rewrite_images
+  RewriteOptions::kConvertToAvif,                  // rewrite_images
   RewriteOptions::kConvertMetaTags,
   RewriteOptions::kConvertPngToJpeg,               // rewrite_images
   RewriteOptions::kConvertToWebpLossless,          // rewrite_images
@@ -622,6 +623,7 @@ const RewriteOptions::Filter kOptimizeForBandwidthFilterSet[] = {
   RewriteOptions::kConvertGifToPng,                // rewrite_images
   RewriteOptions::kConvertJpegToProgressive,       // rewrite_images
   RewriteOptions::kConvertJpegToWebp,              // rewrite_images
+  RewriteOptions::kConvertToAvif,                  // rewrite_images
   RewriteOptions::kConvertPngToJpeg,               // rewrite_images
   RewriteOptions::kInPlaceOptimizeForBrowser,
   RewriteOptions::kJpegSubsampling,                // rewrite_images
@@ -753,6 +755,7 @@ const RewriteOptions::FilterEnumToIdAndNameEntry
         {RewriteOptions::kConvertJpegToProgressive, "jp",
          "Convert Jpeg to Progressive"},
         {RewriteOptions::kConvertJpegToWebp, "jw", "Convert Jpeg To Webp"},
+        {RewriteOptions::kConvertToAvif, "av", "Convert images to AVIF"},
         {RewriteOptions::kConvertMetaTags, "mc", "Convert Meta Tags"},
         {RewriteOptions::kConvertPngToJpeg, "pj", "Convert Png to Jpeg"},
         {RewriteOptions::kConvertToWebpAnimated, "wa",
@@ -1114,6 +1117,7 @@ bool RewriteOptions::ImageOptimizationEnabled() const {
           this->Enabled(RewriteOptions::kConvertJpegToProgressive) ||
           this->Enabled(RewriteOptions::kConvertPngToJpeg) ||
           this->Enabled(RewriteOptions::kConvertJpegToWebp) ||
+          this->Enabled(RewriteOptions::kConvertToAvif) ||
           this->Enabled(RewriteOptions::kConvertToWebpAnimated) ||
           this->Enabled(RewriteOptions::kConvertToWebpLossless));
 }
@@ -2836,6 +2840,7 @@ bool RewriteOptions::AddByNameToFilterSet(
       set->Insert(kConvertGifToPng);
       set->Insert(kConvertJpegToProgressive);
       set->Insert(kConvertJpegToWebp);
+      set->Insert(kConvertToAvif);
       set->Insert(kConvertPngToJpeg);
       set->Insert(kConvertToWebpLossless);
       set->Insert(kInlineImages);
@@ -2851,6 +2856,7 @@ bool RewriteOptions::AddByNameToFilterSet(
       set->Insert(kConvertGifToPng);
       set->Insert(kConvertJpegToProgressive);
       set->Insert(kConvertJpegToWebp);
+      set->Insert(kConvertToAvif);
       set->Insert(kConvertPngToJpeg);
       set->Insert(kJpegSubsampling);
       set->Insert(kRecompressJpeg);

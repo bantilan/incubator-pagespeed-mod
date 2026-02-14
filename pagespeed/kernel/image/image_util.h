@@ -48,7 +48,8 @@ enum ImageFormat {
   IMAGE_JPEG,
   IMAGE_PNG,
   IMAGE_GIF,
-  IMAGE_WEBP
+  IMAGE_WEBP,
+  IMAGE_AVIF
 };
 
 enum PixelFormat {

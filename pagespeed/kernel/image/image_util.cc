@@ -38,6 +38,9 @@ const char kPngHeader[] = "\x89PNG\r\n\x1a\n";
 const size_t kPngHeaderLength = arraysize(kPngHeader) - 1;
 const char kGifHeader[] = "GIF8";
 const size_t kGifHeaderLength = arraysize(kGifHeader) - 1;
+const char kAvifBrand[] = "ftypavif";
+const char kAvisBrand[] = "ftypavis";
+const size_t kAvifBrandLength = 8;
 
 // char to int *without sign extension*.
 inline int CharToInt(char c) {
@@ -56,6 +59,7 @@ const char* ImageFormatToMimeTypeString(ImageFormat image_type) {
     case IMAGE_PNG:     return "image/png";
     case IMAGE_GIF:     return "image/gif";
     case IMAGE_WEBP:    return "image/webp";
+    case IMAGE_AVIF:    return "image/avif";
     // No default so compiler will complain if any enum is not processed.
   }
   return kInvalidImageFormat;
@@ -68,6 +72,7 @@ const char* ImageFormatToString(ImageFormat image_type) {
     case IMAGE_PNG:     return "IMAGE_PNG";
     case IMAGE_GIF:     return "IMAGE_GIF";
     case IMAGE_WEBP:    return "IMAGE_WEBP";
+    case IMAGE_AVIF:    return "IMAGE_AVIF";
     // No default so compiler will complain if any enum is not processed.
   }
   return kInvalidImageFormat;
@@ -102,6 +107,15 @@ net_instaweb::ImageType ComputeImageType(const StringPiece& buf) {
   // we make the call based on as few as two bytes (JPEG).
   net_instaweb::ImageType image_type = net_instaweb::IMAGE_UNKNOWN;
   if (buf.size() >= 8) {
+    if (buf.size() >= 12 && buf[4] == 'f' && buf[5] == 't' &&
+        buf[6] == 'y' && buf[7] == 'p') {
+      StringPiece brand(buf.data() + 4, kAvifBrandLength);
+      if (brand == StringPiece(kAvifBrand, kAvifBrandLength) ||
+          brand == StringPiece(kAvisBrand, kAvifBrandLength)) {
+        return net_instaweb::IMAGE_AVIF;
+      }
+    }
+
     // Note that gcc rightly complains about constant ranges with the
     // negative char constants unless we cast.
     switch (CharToInt(buf[0])) {

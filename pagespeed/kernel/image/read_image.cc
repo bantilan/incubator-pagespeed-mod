@@ -73,6 +73,9 @@ ScanlineReaderInterface* InstantiateScanlineReader(ImageFormat image_type,
       which = "WebpScanlineReader";
       break;
 
+    case IMAGE_AVIF:
+      break;
+
     case IMAGE_GIF: {
       which = "FrameToScanlineReaderAdapter(GifFrameReader)";
       std::unique_ptr<MultipleFrameReader> mf_reader(
@@ -163,6 +166,9 @@ ScanlineWriterInterface* InstantiateScanlineWriter(ImageFormat image_type,
       which = "FrameToScanlineWriterAdapter(WebpFrameWriter)";
       writer = new FrameToScanlineWriterAdapter(
           InstantiateImageFrameWriter(image_type, handler, status));
+      break;
+
+    case pagespeed::image_compression::IMAGE_AVIF:
       break;
 
     case IMAGE_GIF:

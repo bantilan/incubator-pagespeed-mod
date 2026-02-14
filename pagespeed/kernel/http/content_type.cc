@@ -46,6 +46,7 @@ const ContentType kTypes[] = {
     {"image/jpeg", ".jpg", ContentType::kJpeg},
     {"application/x-shockwave-flash", ".swf", ContentType::kSwf},
     {"image/webp", ".webp", ContentType::kWebp},
+    {"image/avif", ".avif", ContentType::kAvif},
     // While the official MIME type is image/vnd.microsoft.icon, old IE browsers
     // will not accept that type, so we use portable image/x-icon as canonical.
     {"image/x-icon", ".ico", ContentType::kIco},
@@ -123,17 +124,18 @@ const ContentType& kContentTypeGif = kTypes[8];
 const ContentType& kContentTypeJpeg = kTypes[9];
 const ContentType& kContentTypeSwf = kTypes[10];
 const ContentType& kContentTypeWebp = kTypes[11];
-const ContentType& kContentTypeIco = kTypes[12];
+const ContentType& kContentTypeAvif = kTypes[12];
+const ContentType& kContentTypeIco = kTypes[13];
 
-const ContentType& kContentTypeJson = kTypes[13];
-const ContentType& kContentTypeSourceMap = kTypes[14];
+const ContentType& kContentTypeJson = kTypes[14];
+const ContentType& kContentTypeSourceMap = kTypes[15];
 
-const ContentType& kContentTypePdf = kTypes[15];
+const ContentType& kContentTypePdf = kTypes[16];
 
-const ContentType& kContentTypeBinaryOctetStream = kTypes[16];
+const ContentType& kContentTypeBinaryOctetStream = kTypes[17];
 
 int ContentType::MaxProducedExtensionLength() {
-  return 4;  // .jpeg or .webp
+  return 5;  // .avif
 }
 
 bool ContentType::IsCss() const { return type_ == kCss; }
@@ -184,6 +186,7 @@ bool ContentType::IsImage() const {
     case kGif:
     case kJpeg:
     case kWebp:
+    case kAvif:
       return true;
     default:
       return false;
@@ -319,6 +322,7 @@ bool ContentType::IsLikelyStaticResource() const {
     case kVideo:
     case kAudio:
     case kWebp:
+    case kAvif:
       return true;
   };
   LOG(DFATAL) << "Unexpected content type: " << type_;

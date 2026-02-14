@@ -357,6 +357,7 @@ TEST_F(RewriteOptionsTest, CompoundFlag) {
   s.Insert(RewriteOptions::kConvertGifToPng);
   s.Insert(RewriteOptions::kConvertJpegToProgressive);
   s.Insert(RewriteOptions::kConvertJpegToWebp);
+  s.Insert(RewriteOptions::kConvertToAvif);
   s.Insert(RewriteOptions::kConvertPngToJpeg);
   s.Insert(RewriteOptions::kConvertToWebpLossless);
   s.Insert(RewriteOptions::kInlineImages);
@@ -383,6 +384,7 @@ TEST_F(RewriteOptionsTest, CompoundFlagRecompressImages) {
   s.Insert(RewriteOptions::kConvertGifToPng);
   s.Insert(RewriteOptions::kConvertJpegToProgressive);
   s.Insert(RewriteOptions::kConvertJpegToWebp);
+  s.Insert(RewriteOptions::kConvertToAvif);
   s.Insert(RewriteOptions::kConvertPngToJpeg);
   s.Insert(RewriteOptions::kJpegSubsampling);
   s.Insert(RewriteOptions::kRecompressJpeg);
@@ -2456,6 +2458,11 @@ TEST_F(RewriteOptionsTest, ImageOptimizableCheck) {
   options_.EnableFilter(RewriteOptions::kConvertJpegToWebp);
   EXPECT_TRUE(options_.ImageOptimizationEnabled());
   options_.DisableFilter(RewriteOptions::kConvertJpegToWebp);
+  EXPECT_FALSE(options_.ImageOptimizationEnabled());
+
+  options_.EnableFilter(RewriteOptions::kConvertToAvif);
+  EXPECT_TRUE(options_.ImageOptimizationEnabled());
+  options_.DisableFilter(RewriteOptions::kConvertToAvif);
   EXPECT_FALSE(options_.ImageOptimizationEnabled());
 
   options_.EnableFilter(RewriteOptions::kConvertPngToJpeg);

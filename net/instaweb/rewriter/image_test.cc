@@ -355,6 +355,8 @@ class ImageTest : public ImageTestBase {
       options_->preferred_webp = WEBP_LOSSY;
     } else if (intended_output_type == IMAGE_WEBP_LOSSLESS_OR_ALPHA) {
       options_->preferred_webp = WEBP_LOSSLESS;
+    } else if (intended_output_type == IMAGE_AVIF) {
+      options_->convert_to_avif = true;
     }
     switch (intended_output_type) {
       case IMAGE_WEBP:

@@ -213,6 +213,9 @@ ImageFormat ImageOptimizer::ImageTypeToImageFormat(
     case net_instaweb::IMAGE_WEBP_ANIMATED:
       image_format = IMAGE_WEBP;
       break;
+    case net_instaweb::IMAGE_AVIF:
+      image_format = IMAGE_AVIF;
+      break;
   }
   return image_format;
 }
@@ -246,6 +249,9 @@ bool ImageOptimizer::ConfigureWriter() {
       jpeg_config->lossy_options.quality = desired_quality_;
       writer_config_.reset(jpeg_config.release());
       result = true;
+      break;
+    case IMAGE_AVIF:
+      result = false;
       break;
     case IMAGE_WEBP:
       webp_config.reset(new WebpConfiguration);

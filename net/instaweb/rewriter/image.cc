@@ -22,6 +22,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <unistd.h>
 
 extern "C" {
 #ifdef USE_SYSTEM_ZLIB
@@ -178,8 +181,97 @@ ImageFormat ImageTypeToImageFormat(ImageType type) {
     case IMAGE_WEBP_ANIMATED:
       format = pagespeed::image_compression::IMAGE_WEBP;
       break;
+    case IMAGE_AVIF:
+      format = pagespeed::image_compression::IMAGE_AVIF;
+      break;
   }
   return format;
+}
+
+bool ConvertToAvifExternal(const GoogleString& input_image,
+                           const char* input_suffix,
+                           int configured_quality,
+                           GoogleString* output_avif,
+                           MessageHandler* handler) {
+  char input_template[] = "/tmp/ps_avif_input_XXXXXX.bin";
+  char output_template[] = "/tmp/ps_avif_output_XXXXXX.avif";
+  int input_fd = mkstemps(input_template, 4);
+  if (input_fd < 0) {
+    PS_LOG_WARN(handler, "Failed to create temp input file for AVIF encoder");
+    return false;
+  }
+  int output_fd = mkstemps(output_template, 5);
+  if (output_fd < 0) {
+    close(input_fd);
+    unlink(input_template);
+    PS_LOG_WARN(handler, "Failed to create temp output file for AVIF encoder");
+    return false;
+  }
+  close(output_fd);
+
+  // Rename input file to include the expected extension.
+  GoogleString input_path = StringPrintf("%s%s", input_template, input_suffix);
+  if (rename(input_template, input_path.c_str()) != 0) {
+    close(input_fd);
+    unlink(input_template);
+    unlink(output_template);
+    PS_LOG_WARN(handler, "Failed to set AVIF input extension");
+    return false;
+  }
+
+  bool ok = true;
+  const char* buf = input_image.data();
+  size_t remaining = input_image.size();
+  while (remaining > 0) {
+    ssize_t n = write(input_fd, buf, remaining);
+    if (n <= 0) {
+      ok = false;
+      break;
+    }
+    remaining -= static_cast<size_t>(n);
+    buf += n;
+  }
+  close(input_fd);
+
+  if (ok) {
+    int clamped_quality = std::max(0, std::min(100, configured_quality));
+    int cq_level = 63 - ((clamped_quality * 63) / 100);
+    GoogleString cmd = StringPrintf(
+        "avifenc --quiet --jobs 1 --min %d --max %d \"%s\" \"%s\" >/dev/null 2>&1",
+        cq_level, cq_level, input_path.c_str(), output_template);
+    ok = (system(cmd.c_str()) == 0);
+  }
+
+  if (ok) {
+    FILE* output_file = fopen(output_template, "rb");
+    if (output_file == nullptr) {
+      ok = false;
+    } else {
+      output_avif->clear();
+      char buffer[8192];
+      while (true) {
+        size_t n = fread(buffer, 1, sizeof(buffer), output_file);
+        if (n > 0) {
+          output_avif->append(buffer, n);
+        }
+        if (n < sizeof(buffer)) {
+          if (feof(output_file)) {
+            break;
+          }
+          ok = false;
+          break;
+        }
+      }
+      fclose(output_file);
+      if (output_avif->empty()) {
+        ok = false;
+      }
+    }
+  }
+
+  unlink(input_path.c_str());
+  unlink(output_template);
+  return ok;
 }
 
 ImageFormat GetOutputImageFormat(ImageFormat in_format) {
@@ -568,6 +660,8 @@ void ImageImpl::ComputeImageType() {
     case IMAGE_WEBP_ANIMATED:
       FindWebpSize();
       break;
+    case IMAGE_AVIF:
+      break;
     case IMAGE_UNKNOWN:
       break;
   }
@@ -591,6 +685,9 @@ const ContentType* Image::TypeToContentType(ImageType image_type) {
     case IMAGE_WEBP_LOSSLESS_OR_ALPHA:
     case IMAGE_WEBP_ANIMATED:
       res = &kContentTypeWebp;
+      break;
+    case IMAGE_AVIF:
+      res = &kContentTypeAvif;
       break;
   }
   return res;
@@ -870,8 +967,23 @@ bool ImageImpl::ComputeOutputContents() {
         // TODO(huibao): Recompress animated WebP.
         ok = false;
         break;
+      case IMAGE_AVIF:
+        ok = false;
+        break;
       case IMAGE_JPEG:
         if (MayConvert() &&
+            options_->convert_to_avif &&
+            options_->webp_quality > 0) {
+          ok = ConvertToAvifExternal(string_for_image, ".jpg",
+                                     options_->webp_quality,
+                                     &output_contents_, handler_.get());
+          if (ok) {
+            image_type_ = IMAGE_AVIF;
+          } else {
+            PS_LOG_INFO(handler_, "Failed to create avif.");
+          }
+        }
+        if (!ok && MayConvert() &&
             options_->convert_jpeg_to_webp &&
             (options_->preferred_webp != WEBP_NONE)) {
           ok = ConvertJpegToWebp(string_for_image, options_->webp_quality,
@@ -882,7 +994,7 @@ bool ImageImpl::ComputeOutputContents() {
             PS_LOG_INFO(handler_, "Failed to create webp!");
           }
         }
-        if (ok) {
+        if (ok && image_type_ != IMAGE_AVIF) {
           image_type_ = IMAGE_WEBP;
         } else if (MayConvert() &&
                    (resized || options_->recompress_jpeg)) {
@@ -1079,8 +1191,10 @@ inline bool ImageImpl::ComputeOutputContentsFromGifOrPng(
               (input_type == IMAGE_GIF && options_->convert_gif_to_png))) {
     // Can be converted to lossy format.
     if (!has_transparency) {
-      // No alpha; can be converted to WebP lossy or JPEG.
-      if (options_->preferred_webp != WEBP_NONE &&
+      // No alpha; can be converted to AVIF, WebP lossy, or JPEG.
+      if (options_->convert_to_avif && options_->webp_quality > 0) {
+        output_type = IMAGE_AVIF;
+      } else if (options_->preferred_webp != WEBP_NONE &&
           options_->convert_jpeg_to_webp &&
           options_->webp_quality > 0) {
         compress_color_losslessly = false;
@@ -1089,7 +1203,9 @@ inline bool ImageImpl::ComputeOutputContentsFromGifOrPng(
         output_type = IMAGE_JPEG;
       }
     } else {
-      if (options_->allow_webp_alpha &&
+      if (options_->convert_to_avif && options_->webp_quality > 0) {
+        output_type = IMAGE_AVIF;
+      } else if (options_->allow_webp_alpha &&
           options_->convert_jpeg_to_webp &&
           options_->webp_quality > 0) {
         compress_color_losslessly = false;
@@ -1098,7 +1214,10 @@ inline bool ImageImpl::ComputeOutputContentsFromGifOrPng(
     }
   } else {
     // Must be converted to lossless format.
-    if (options_->preferred_webp == WEBP_ANIMATED ||
+    if (options_->convert_to_avif && options_->webp_quality > 0 &&
+        input_type != IMAGE_GIF) {
+      output_type = IMAGE_AVIF;
+    } else if (options_->preferred_webp == WEBP_ANIMATED ||
         options_->preferred_webp == WEBP_LOSSLESS) {
       compress_color_losslessly = true;
       output_type = IMAGE_WEBP_LOSSLESS_OR_ALPHA;
@@ -1108,6 +1227,21 @@ inline bool ImageImpl::ComputeOutputContentsFromGifOrPng(
   if (output_type == IMAGE_WEBP_ANIMATED) {
     ok = ConvertAnimatedGifToWebp(has_transparency);
   } else {
+    if (output_type == IMAGE_AVIF) {
+      ok = MayConvert() &&
+           ConvertToAvifExternal(string_for_image,
+                                 (input_type == IMAGE_PNG) ? ".png" : ".jpg",
+                                 options_->webp_quality, &output_contents_,
+                                 handler_.get());
+      if (!ok) {
+        if (!has_transparency && options_->jpeg_quality > 0) {
+          output_type = IMAGE_JPEG;
+        } else {
+          fall_back_to_png = true;
+        }
+      }
+    }
+
     if (output_type == IMAGE_WEBP ||
         output_type == IMAGE_WEBP_LOSSLESS_OR_ALPHA) {
       ok = MayConvert() &&

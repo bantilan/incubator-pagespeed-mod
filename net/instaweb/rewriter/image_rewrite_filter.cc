@@ -204,6 +204,7 @@ const RewriteOptions::Filter ImageRewriteFilter::kRelatedFilters[] = {
   RewriteOptions::kConvertGifToPng,
   RewriteOptions::kConvertJpegToProgressive,
   RewriteOptions::kConvertJpegToWebp,
+  RewriteOptions::kConvertToAvif,
   RewriteOptions::kConvertPngToJpeg,
   RewriteOptions::kConvertToWebpAnimated,
   RewriteOptions::kConvertToWebpLossless,
@@ -906,6 +907,8 @@ Image::CompressionOptions* ImageRewriteFilter::ImageOptionsForLoadedResource(
       options->Enabled(RewriteOptions::kConvertGifToPng);
   image_options->convert_jpeg_to_webp =
       options->Enabled(RewriteOptions::kConvertJpegToWebp);
+  image_options->convert_to_avif =
+      options->Enabled(RewriteOptions::kConvertToAvif);
   image_options->recompress_jpeg =
       options->Enabled(RewriteOptions::kRecompressJpeg);
   image_options->recompress_png =
