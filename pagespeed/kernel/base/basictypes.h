@@ -45,9 +45,17 @@ inline unique_ptr<T> make_unique(size_t n) {
 }  // namespace std
 #endif
 
-#define arraysize(a)            \
-  ((sizeof(a) / sizeof(*(a))) / \
-   static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
+// Keep arraysize() definition aligned with Chromium to avoid redefinition
+// warnings when both headers are pulled into the same translation unit.
+template <typename T, size_t N>
+char (&ArraySizeHelper(T (&array)[N]))[N];
+
+#ifndef _MSC_VER
+template <typename T, size_t N>
+char (&ArraySizeHelper(const T (&array)[N]))[N];
+#endif
+
+#define arraysize(array) (sizeof(ArraySizeHelper(array)))
 
 // The FALLTHROUGH_INTENDED macro can be used to annotate implicit fall-through
 // between switch labels:
