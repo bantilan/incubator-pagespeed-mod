@@ -126,6 +126,26 @@ extern const char kAnalyticsJsSnippet[] =
     "ga('send', 'pageview');"
     "}";
 
+// Google tag snippet for modern GA4/Google tag IDs (G-/GT-).
+extern const char kGtagJsSnippet[] =
+    "if (window.parent == window) {"
+    "window.dataLayer = window.dataLayer || [];"
+    "function gtag(){dataLayer.push(arguments);}"
+    "gtag('js', new Date());"
+    "gtag('config', '%s');"
+    "(function(){"
+    "var s = document.createElement('script');"
+    "s.async = true;"
+    "s.src = 'https://www.googletagmanager.com/gtag/js?id=%s';"
+    "var f = document.getElementsByTagName('script')[0];"
+    "if (f && f.parentNode) {"
+    "f.parentNode.insertBefore(s, f);"
+    "} else {"
+    "(document.head || document.documentElement).appendChild(s);"
+    "}"
+    "})();"
+    "}";
+
 // Increase site speed tracking to 100% when using analytics.js
 // Use the first one if we're inserting the snippet, or if the site we're
 // modifying isn't already using a fields object with ga('create'), the second
@@ -164,6 +184,10 @@ extern const char kContentExperimentsSetExpAndVariantSnippet[] =
 // TODO(nforman): Allow this to be configurable through RewriteOptions.
 extern const char kGASpeedTracking[] =
     "_gaq.push(['_setSiteSpeedSampleRate', 100]);";
+
+bool IsGoogleTagId(StringPiece ga_id) {
+  return strings::StartsWith(ga_id, "GT-") || strings::StartsWith(ga_id, "G-");
+}
 
 InsertGAFilter::InsertGAFilter(RewriteDriver* rewrite_driver)
     : CommonFilter(rewrite_driver),
@@ -306,7 +330,13 @@ void InsertGAFilter::EndDocument() {
   GoogleString js_text;
   GoogleString experiment_snippet;
   const char* speed_tracking = "";
-  if (driver()->options()->use_analytics_js()) {
+  if (IsGoogleTagId(ga_id_)) {
+    if (driver()->options()->running_experiment()) {
+      driver()->InfoHere("insert_ga: experiment tracking rewrite is not"
+                         " supported for gtag.js snippets.");
+    }
+    js_text = StringPrintf(kGtagJsSnippet, ga_id_.c_str(), ga_id_.c_str());
+  } else if (driver()->options()->use_analytics_js()) {
     if (increase_speed_tracking_) {
       speed_tracking = kAnalyticsJsIncreaseSiteSpeedTracking;
     }

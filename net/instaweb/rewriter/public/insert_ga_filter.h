@@ -53,6 +53,9 @@ extern const char kGAJsSnippet[];
 // second is kContentExperimentsSetExpAndVariantSnippet or nothing.
 extern const char kAnalyticsJsSnippet[];
 
+// Google tag snippet for modern GA4/Google tag IDs (G-/GT-).
+extern const char kGtagJsSnippet[];
+
 // Increase site speed tracking to 100% when using analytics.js
 // Use the first one if we're inserting the snippet, or if the site we're
 // modifying isn't already using a fields object with ga('create'), the second
