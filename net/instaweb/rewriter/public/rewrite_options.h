@@ -199,6 +199,7 @@ class RewriteOptions {
     kSpriteImages,
     kStripImageColorProfile,
     kStripImageMetaData,
+    kStripLegacyPolyfills,
     kStripScripts,
     kEndOfFilters
   };

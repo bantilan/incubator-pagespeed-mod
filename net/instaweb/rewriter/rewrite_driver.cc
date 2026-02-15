@@ -116,6 +116,7 @@
 #include "net/instaweb/rewriter/public/scan_filter.h"
 #include "net/instaweb/rewriter/public/server_context.h"
 #include "net/instaweb/rewriter/public/strip_scripts_filter.h"
+#include "net/instaweb/rewriter/public/strip_legacy_polyfills_filter.h"
 #include "net/instaweb/rewriter/public/strip_subresource_hints_filter.h"
 #include "net/instaweb/rewriter/public/support_noscript_filter.h"
 #include "net/instaweb/rewriter/public/url_input_resource.h"
@@ -1064,6 +1065,10 @@ void RewriteDriver::AddPreRenderFilters() {
   if (rewrite_options->Enabled(RewriteOptions::kStripScripts)) {
     // Experimental filter that blindly strips all scripts from a page.
     AppendOwnedPreRenderFilter(new StripScriptsFilter(this));
+  }
+  if (rewrite_options->Enabled(RewriteOptions::kStripLegacyPolyfills)) {
+    // Remove legacy polyfill script tags while keeping normal scripts.
+    AppendOwnedPreRenderFilter(new StripLegacyPolyfillsFilter(this));
   }
   if (is_critical_images_beacon_enabled()) {
     // This filter should be enabled early, at least before image rewriting,

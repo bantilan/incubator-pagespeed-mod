@@ -673,6 +673,7 @@ const RewriteOptions::Filter kDangerousFilterSet[] = {
     RewriteOptions::kMobilize,
     RewriteOptions::kMobilizePrecompute,      // TODO(jud): Unused, remove.
     RewriteOptions::kServeDeprecationNotice,  // internal.
+    RewriteOptions::kStripLegacyPolyfills,
     RewriteOptions::kStripScripts,
 };
 
@@ -861,6 +862,8 @@ const RewriteOptions::FilterEnumToIdAndNameEntry
         {RewriteOptions::kStripImageColorProfile, "cp",
          "Strip Image Color Profiles"},
         {RewriteOptions::kStripImageMetaData, "md", "Strip Image Meta Data"},
+        {RewriteOptions::kStripLegacyPolyfills, "slp",
+         "Strip Legacy Polyfills"},
         {RewriteOptions::kStripScripts, "ss", "Strip Scripts"},
 };
 

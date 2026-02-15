@@ -1650,6 +1650,7 @@
         'rewriter/single_rewrite_context.cc',
         'rewriter/srcset_slot.cc',
         'rewriter/strip_scripts_filter.cc',
+        'rewriter/strip_legacy_polyfills_filter.cc',
         'rewriter/strip_subresource_hints_filter.cc',
         'rewriter/support_noscript_filter.cc',
         'rewriter/url_input_resource.cc',

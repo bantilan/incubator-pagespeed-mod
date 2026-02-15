@@ -154,6 +154,7 @@ struct FilterMap {
 "sprite_images",                     RewriteOptions::kSpriteImages
 "strip_image_color_profile",         RewriteOptions::kStripImageColorProfile
 "strip_image_meta_data",             RewriteOptions::kStripImageMetaData
+"strip_legacy_polyfills",            RewriteOptions::kStripLegacyPolyfills
 "strip_scripts",                     RewriteOptions::kStripScripts
 "trim_urls",                         RewriteOptions::kLeftTrimUrls
 %%
