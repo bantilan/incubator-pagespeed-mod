@@ -33,6 +33,8 @@ class StripLegacyPolyfillsFilterTest : public HtmlParseTestBase {
     html_parse_.AddFilter(&strip_legacy_polyfills_filter_);
   }
 
+  bool AddBody() const override { return false; }
+
  private:
   StripLegacyPolyfillsFilter strip_legacy_polyfills_filter_;
 
