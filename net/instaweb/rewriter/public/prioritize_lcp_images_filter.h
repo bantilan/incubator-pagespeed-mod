@@ -32,7 +32,8 @@ namespace net_instaweb {
 // Rewriter that heuristically prioritizes an early in-viewport image:
 // 1) removes loading="lazy"
 // 2) adds fetchpriority="high"
-// 3) inserts <link rel="preload" as="image" href="..."> in <head>
+// 3) inserts <link rel="preload" as="image" href="..." fetchpriority="high">
+//    in <head>
 // 4) adds pagespeed_no_defer/data-pagespeed-no-defer to avoid defer filters
 class PrioritizeLcpImagesFilter : public CommonFilter {
  public:

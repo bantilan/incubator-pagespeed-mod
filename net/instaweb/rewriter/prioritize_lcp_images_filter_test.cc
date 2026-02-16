@@ -50,7 +50,8 @@ TEST_F(PrioritizeLcpImagesFilterTest, PrioritizesFirstImage) {
       "<img loading=\"lazy\" src=\"/next.jpg\">"
       "</body>";
   const GoogleString expected =
-      "<head><link rel=\"preload\" as=\"image\" href=\"/hero.jpg\"/></head><body>"
+      "<head><link rel=\"preload\" as=\"image\" href=\"/hero.jpg\" "
+      "fetchpriority=\"high\"/></head><body>"
       "<img src=\"/hero.jpg\" fetchpriority=\"high\" "
       "data-pagespeed-no-defer=\"1\" pagespeed_no_defer=\"1\"/>"
       "<img loading=\"lazy\" src=\"/next.jpg\"/>"
@@ -66,7 +67,8 @@ TEST_F(PrioritizeLcpImagesFilterTest, PrioritizesImgInsidePicture) {
       "loading=\"lazy\"></picture>"
       "</body>";
   const GoogleString expected =
-      "<head><link rel=\"preload\" as=\"image\" href=\"/hero.jpg\"/></head><body>"
+      "<head><link rel=\"preload\" as=\"image\" href=\"/hero.jpg\" "
+      "fetchpriority=\"high\"/></head><body>"
       "<picture><source srcset=\"/hero.webp\"/>"
       "<img src=\"/hero.jpg\" fetchpriority=\"high\" "
       "data-pagespeed-no-defer=\"1\" pagespeed_no_defer=\"1\"/>"

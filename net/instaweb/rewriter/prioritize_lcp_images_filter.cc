@@ -145,6 +145,7 @@ void PrioritizeLcpImagesFilter::InsertPreloadHint(
   driver()->AddAttribute(preload, HtmlName::kRel, "preload");
   driver()->AddAttribute(preload, HtmlName::kAs, "image");
   driver()->AddAttribute(preload, HtmlName::kHref, src);
+  driver()->AddAttribute(preload, HtmlName::kFetchpriority, "high");
   if (head_element_ != NULL && driver()->CanAppendChild(head_element_)) {
     driver()->AppendChild(head_element_, preload);
   } else {
