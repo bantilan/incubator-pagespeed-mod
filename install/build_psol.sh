@@ -156,6 +156,10 @@ rsync -arz "." "psol/include/" --prune-empty-dirs \
   --include="mod_pagespeed_console_html_out.cc" \
   --exclude='*'
 
+# Ensure shipped headers use the generated version header, not the template
+# checked into source.
+cp -f "$version_h" psol/include/net/instaweb/public/version.h
+
 # Log that we did this.
 REPO="$(git config --get remote.origin.url)"
 COMMIT="$(git rev-parse HEAD)"
