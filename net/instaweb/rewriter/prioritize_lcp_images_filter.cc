@@ -50,6 +50,7 @@ void PrioritizeLcpImagesFilter::DetermineEnabled(GoogleString* disabled_reason) 
 }
 
 void PrioritizeLcpImagesFilter::StartDocumentImpl() {
+  head_element_ = NULL;
   in_head_ = false;
   in_body_ = false;
   prioritized_count_ = 0;
@@ -58,6 +59,7 @@ void PrioritizeLcpImagesFilter::StartDocumentImpl() {
 
 void PrioritizeLcpImagesFilter::StartElementImpl(HtmlElement* element) {
   if (element->keyword() == HtmlName::kHead) {
+    head_element_ = element;
     in_head_ = true;
     return;
   }
@@ -134,6 +136,23 @@ bool PrioritizeLcpImagesFilter::IsEligibleImage(
   return true;
 }
 
+void PrioritizeLcpImagesFilter::InsertPreloadHint(
+    HtmlElement* element, const GoogleString& src) {
+  if (!preloaded_hrefs_.insert(src).second) {
+    return;
+  }
+  HtmlElement* preload = driver()->NewElement(element, HtmlName::kLink);
+  driver()->AddAttribute(preload, HtmlName::kRel, "preload");
+  driver()->AddAttribute(preload, HtmlName::kAs, "image");
+  driver()->AddAttribute(preload, HtmlName::kHref, src);
+  if (head_element_ != NULL && driver()->CanAppendChild(head_element_)) {
+    driver()->AppendChild(head_element_, preload);
+  } else {
+    // Fallback for malformed documents without a writable <head>.
+    driver()->InsertNodeBeforeNode(element, preload);
+  }
+}
+
 void PrioritizeLcpImagesFilter::PrioritizeImage(
     HtmlElement* element, const GoogleString& src) {
   // Ensure this candidate is not lazy/deferred by browser or other filters.
@@ -159,15 +178,7 @@ void PrioritizeLcpImagesFilter::PrioritizeImage(
     driver()->AddAttribute(element, HtmlName::kPagespeedNoDefer, "1");
   }
 
-  // Insert preload right before the prioritized image so discovery happens in
-  // the initial HTML document parse.
-  if (preloaded_hrefs_.insert(src).second) {
-    HtmlElement* preload = driver()->NewElement(element, HtmlName::kLink);
-    driver()->AddAttribute(preload, HtmlName::kRel, "preload");
-    driver()->AddAttribute(preload, HtmlName::kAs, "image");
-    driver()->AddAttribute(preload, HtmlName::kHref, src);
-    driver()->InsertNodeBeforeNode(element, preload);
-  }
+  InsertPreloadHint(element, src);
 
   ++prioritized_count_;
   driver()->log_record()->SetRewriterLoggingStatus(

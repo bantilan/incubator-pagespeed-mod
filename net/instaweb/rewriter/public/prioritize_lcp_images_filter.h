@@ -32,7 +32,7 @@ namespace net_instaweb {
 // Rewriter that heuristically prioritizes an early in-viewport image:
 // 1) removes loading="lazy"
 // 2) adds fetchpriority="high"
-// 3) inserts <link rel="preload" as="image" href="..."> before the image
+// 3) inserts <link rel="preload" as="image" href="..."> in <head>
 // 4) adds pagespeed_no_defer/data-pagespeed-no-defer to avoid defer filters
 class PrioritizeLcpImagesFilter : public CommonFilter {
  public:
@@ -48,10 +48,12 @@ class PrioritizeLcpImagesFilter : public CommonFilter {
   void EndElementImpl(HtmlElement* element) override;
 
   bool IsEligibleImage(HtmlElement* element, GoogleString* src_out) const;
+  void InsertPreloadHint(HtmlElement* element, const GoogleString& src);
   void PrioritizeImage(HtmlElement* element, const GoogleString& src);
   bool IsHiddenByStyle(HtmlElement* element) const;
   bool LooksLikeTinyTracker(HtmlElement* element) const;
 
+  HtmlElement* head_element_;
   bool in_head_;
   bool in_body_;
   int prioritized_count_;
