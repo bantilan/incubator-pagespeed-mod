@@ -223,8 +223,10 @@ const char* kAvifRewrittenUrlBlockedlist[] = {
     "*Firefox/?.*", "*Firefox/1?.*", "*Firefox/2?.*", "*Firefox/3?.*",
     "*Firefox/4?.*", "*Firefox/5?.*", "*Firefox/6?.*", "*Firefox/7?.*",
     "*Firefox/8?.*", "*Firefox/90.*", "*Firefox/91.*", "*Firefox/92.*",
-    // Safari below 16.
+    // Safari below 16.4.
     "*Version/?.*Safari/*", "*Version/1?.*Safari/*",
+    "*Version/16.0*Safari/*", "*Version/16.1*Safari/*",
+    "*Version/16.2*Safari/*", "*Version/16.3*Safari/*",
 };
 
 const char* kInsertDnsPrefetchAllowlist[] = {
