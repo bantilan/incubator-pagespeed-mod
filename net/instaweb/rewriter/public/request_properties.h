@@ -61,6 +61,7 @@ class RequestProperties {
   // subset of the user agents for which SupportsWebpRewrittenUrls holds).
   bool SupportsWebpInPlace() const;
   bool SupportsWebpRewrittenUrls() const;
+  bool SupportsAvifRewrittenUrls() const;
   bool SupportsWebpLosslessAlpha() const;
   bool SupportsWebpAnimated() const;
   bool IsBot() const;
@@ -86,6 +87,7 @@ class RequestProperties {
   mutable LazyBool supports_lazyload_images_;
   mutable LazyBool supports_webp_in_place_;
   mutable LazyBool supports_webp_rewritten_urls_;
+  mutable LazyBool supports_avif_rewritten_urls_;
   mutable LazyBool supports_webp_lossless_alpha_;
   mutable LazyBool supports_webp_animated_;
 

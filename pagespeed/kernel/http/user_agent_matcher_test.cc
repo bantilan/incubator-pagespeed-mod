@@ -524,4 +524,104 @@ TEST_F(UserAgentMatcherTest, DoesntSupportAnimatedWebp) {
       kPagespeedInsightsDesktopUserAgent));
 }
 
+TEST_F(UserAgentMatcherTest, ModernChromiumBuildNumberParsing) {
+  const char kEdgeUserAgent[] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/123.0.6312.86 Safari/537.36 "
+      "Edg/123.0.2420.81";
+  const char kOperaUserAgent[] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36 "
+      "OPR/108.0.0.0";
+  const char kEdgeIOSUserAgent[] =
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) "
+      "AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/122.0.2365.92 "
+      "Version/17.0 Mobile/15E148 Safari/604.1";
+
+  int major = -1;
+  int minor = -1;
+  int build = -1;
+  int patch = -1;
+  EXPECT_TRUE(user_agent_matcher_->GetChromeBuildNumber(
+      kEdgeUserAgent, &major, &minor, &build, &patch));
+  EXPECT_EQ(major, 123);
+  EXPECT_EQ(minor, 0);
+  EXPECT_EQ(build, 2420);
+  EXPECT_EQ(patch, 81);
+
+  EXPECT_TRUE(user_agent_matcher_->GetChromeBuildNumber(
+      kOperaUserAgent, &major, &minor, &build, &patch));
+  EXPECT_EQ(major, 108);
+  EXPECT_EQ(minor, 0);
+  EXPECT_EQ(build, 0);
+  EXPECT_EQ(patch, 0);
+
+  EXPECT_TRUE(user_agent_matcher_->GetChromeBuildNumber(
+      kEdgeIOSUserAgent, &major, &minor, &build, &patch));
+  EXPECT_EQ(major, 122);
+  EXPECT_EQ(minor, 0);
+  EXPECT_EQ(build, 2365);
+  EXPECT_EQ(patch, 92);
+}
+
+TEST_F(UserAgentMatcherTest, ModernMobileAndTabletDetection) {
+  const char kPixelMobile[] =
+      "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/123.0.6312.99 Mobile Safari/537.36";
+  const char kGalaxyTablet[] =
+      "Mozilla/5.0 (Linux; Android 13; SM-T870) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/123.0.6312.99 Safari/537.36";
+  const char kDesktopEdge[] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/123.0.6312.86 Safari/537.36 "
+      "Edg/123.0.2420.81";
+
+  EXPECT_EQ(UserAgentMatcher::kMobile,
+            user_agent_matcher_->GetDeviceTypeForUA(kPixelMobile));
+  EXPECT_EQ(UserAgentMatcher::kTablet,
+            user_agent_matcher_->GetDeviceTypeForUA(kGalaxyTablet));
+  EXPECT_EQ(UserAgentMatcher::kDesktop,
+            user_agent_matcher_->GetDeviceTypeForUA(kDesktopEdge));
+}
+
+TEST_F(UserAgentMatcherTest, SupportsAvifRewrittenUrls) {
+  const char kChrome123[] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/123.0.6312.86 Safari/537.36";
+  const char kEdge123[] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/123.0.6312.86 Safari/537.36 "
+      "Edg/123.0.2420.81";
+  const char kFirefox123[] =
+      "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0";
+  const char kSafari16[] =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 "
+      "(KHTML, like Gecko) Version/16.6 Safari/605.1.15";
+
+  EXPECT_TRUE(user_agent_matcher_->SupportsAvifRewrittenUrls(kChrome123));
+  EXPECT_TRUE(user_agent_matcher_->SupportsAvifRewrittenUrls(kEdge123));
+  EXPECT_TRUE(user_agent_matcher_->SupportsAvifRewrittenUrls(kFirefox123));
+  EXPECT_TRUE(user_agent_matcher_->SupportsAvifRewrittenUrls(kSafari16));
+}
+
+TEST_F(UserAgentMatcherTest, DoesntSupportAvifRewrittenUrls) {
+  const char kChrome84[] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36";
+  const char kEdge84[] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36 "
+      "Edg/84.0.522.63";
+  const char kFirefox92[] =
+      "Mozilla/5.0 (X11; Linux x86_64; rv:92.0) Gecko/20100101 Firefox/92.0";
+  const char kSafari15[] =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+      "(KHTML, like Gecko) Version/15.6 Safari/605.1.15";
+
+  EXPECT_FALSE(user_agent_matcher_->SupportsAvifRewrittenUrls(kChrome84));
+  EXPECT_FALSE(user_agent_matcher_->SupportsAvifRewrittenUrls(kEdge84));
+  EXPECT_FALSE(user_agent_matcher_->SupportsAvifRewrittenUrls(kFirefox92));
+  EXPECT_FALSE(user_agent_matcher_->SupportsAvifRewrittenUrls(kSafari15));
+}
+
 }  // namespace net_instaweb

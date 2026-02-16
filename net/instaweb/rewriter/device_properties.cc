@@ -38,7 +38,9 @@ DeviceProperties::DeviceProperties(UserAgentMatcher* matcher)
       supports_lazyload_images_(kNotSet),
       requests_save_data_(kNotSet),
       accepts_webp_(kNotSet),
+      accepts_avif_(kNotSet),
       supports_webp_rewritten_urls_(kNotSet),
+      supports_avif_rewritten_urls_(kNotSet),
       supports_webp_lossless_alpha_(kNotSet),
       supports_webp_animated_(kNotSet),
       is_bot_(kNotSet),
@@ -60,6 +62,7 @@ void DeviceProperties::SetUserAgent(const StringPiece& user_agent_string) {
   supports_js_defer_ = kNotSet;
   supports_lazyload_images_ = kNotSet;
   supports_webp_rewritten_urls_ = kNotSet;
+  supports_avif_rewritten_urls_ = kNotSet;
   supports_webp_lossless_alpha_ = kNotSet;
   supports_webp_animated_ = kNotSet;
   is_bot_ = kNotSet;
@@ -73,6 +76,10 @@ void DeviceProperties::ParseRequestHeaders(
   DCHECK_EQ(kNotSet, accepts_webp_) << "Double call to ParseRequestHeaders";
   accepts_webp_ = request_headers.HasValue(HttpAttributes::kAccept,
                                            kContentTypeWebp.mime_type())
+                      ? kTrue
+                      : kFalse;
+  accepts_avif_ = request_headers.HasValue(HttpAttributes::kAccept,
+                                           kContentTypeAvif.mime_type())
                       ? kTrue
                       : kFalse;
   accepts_gzip_ = request_headers.HasValue(HttpAttributes::kAcceptEncoding,
@@ -171,6 +178,18 @@ bool DeviceProperties::SupportsWebpRewrittenUrls() const {
     }
   }
   return (supports_webp_rewritten_urls_ == kTrue);
+}
+
+bool DeviceProperties::SupportsAvifRewrittenUrls() const {
+  if (supports_avif_rewritten_urls_ == kNotSet) {
+    if ((accepts_avif_ == kTrue) ||
+        ua_matcher_->SupportsAvifRewrittenUrls(user_agent_)) {
+      supports_avif_rewritten_urls_ = kTrue;
+    } else {
+      supports_avif_rewritten_urls_ = kFalse;
+    }
+  }
+  return (supports_avif_rewritten_urls_ == kTrue);
 }
 
 bool DeviceProperties::SupportsWebpLosslessAlpha() const {

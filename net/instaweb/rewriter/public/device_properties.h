@@ -59,6 +59,7 @@ class DeviceProperties {
   // header, ever.  So we need to Vary: user-agent or cache-control: private,
   // and thus restrict it to rewritten urls.
   bool SupportsWebpRewrittenUrls() const;
+  bool SupportsAvifRewrittenUrls() const;
   bool SupportsWebpLosslessAlpha() const;
   bool SupportsWebpAnimated() const;
   bool IsBot() const;
@@ -98,8 +99,10 @@ class DeviceProperties {
   mutable LazyBool supports_lazyload_images_;
   mutable LazyBool requests_save_data_;
   mutable LazyBool accepts_webp_;
+  mutable LazyBool accepts_avif_;
   mutable LazyBool accepts_gzip_;
   mutable LazyBool supports_webp_rewritten_urls_;
+  mutable LazyBool supports_avif_rewritten_urls_;
   mutable LazyBool supports_webp_lossless_alpha_;
   mutable LazyBool supports_webp_animated_;
   mutable LazyBool is_bot_;

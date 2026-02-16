@@ -908,7 +908,8 @@ Image::CompressionOptions* ImageRewriteFilter::ImageOptionsForLoadedResource(
   image_options->convert_jpeg_to_webp =
       options->Enabled(RewriteOptions::kConvertJpegToWebp);
   image_options->convert_to_avif =
-      options->Enabled(RewriteOptions::kConvertToAvif);
+      options->Enabled(RewriteOptions::kConvertToAvif) &&
+      driver()->request_properties()->SupportsAvifRewrittenUrls();
   image_options->recompress_jpeg =
       options->Enabled(RewriteOptions::kRecompressJpeg);
   image_options->recompress_png =

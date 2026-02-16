@@ -36,6 +36,7 @@ RequestProperties::RequestProperties(UserAgentMatcher* matcher)
       supports_lazyload_images_(kNotSet),
       supports_webp_in_place_(kNotSet),
       supports_webp_rewritten_urls_(kNotSet),
+      supports_avif_rewritten_urls_(kNotSet),
       supports_webp_lossless_alpha_(kNotSet),
       supports_webp_animated_(kNotSet) {}
 
@@ -128,6 +129,14 @@ bool RequestProperties::SupportsWebpRewrittenUrls() const {
             : kFalse;
   }
   return (supports_webp_rewritten_urls_ == kTrue);
+}
+
+bool RequestProperties::SupportsAvifRewrittenUrls() const {
+  if (supports_avif_rewritten_urls_ == kNotSet) {
+    supports_avif_rewritten_urls_ =
+        device_properties_->SupportsAvifRewrittenUrls() ? kTrue : kFalse;
+  }
+  return (supports_avif_rewritten_urls_ == kTrue);
 }
 
 bool RequestProperties::SupportsWebpLosslessAlpha() const {

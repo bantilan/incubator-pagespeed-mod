@@ -51,6 +51,10 @@ const char kGooglePlusUserAgent[] =
 const char* kImageInliningAllowlist[] = {
     "*Android*",
     "*Chrome/*",
+    "*CriOS/*",
+    "*Edg/*",
+    "*EdgA/*",
+    "*EdgiOS/*",
     "*Firefox/*",
     "*iPad*",
     "*iPhone*",
@@ -68,8 +72,15 @@ const char* kImageInliningAllowlist[] = {
     "webp-la",
 };
 const char* kImageInliningBlockedlist[] = {
-    "*Firefox/1.*", "*Firefox/2.*", "*MSIE 5.*", "*MSIE 6.*",
-    "*MSIE 7.*",    "*Opera?5*",    "*Opera?6*", kGooglePlusUserAgent};
+    "*Firefox/1.*",
+    "*Firefox/2.*",
+    "*MSIE 5.*",
+    "*MSIE 6.*",
+    "*MSIE 7.*",
+    "*Opera?5*",
+    "*Opera?6*",
+    kGooglePlusUserAgent,
+};
 
 // Exclude BlackBerry OS 5.0 and older. See
 // http://supportforums.blackberry.com/t5/Web-and-WebWorks-Development/How-to-detect-the-BlackBerry-Browser/ta-p/559862
@@ -86,12 +97,19 @@ const char* kLazyloadImagesBlockedlist[] = {"BlackBerry*CLDC*", "*Opera Mini*",
 // Do allow googlebot, since we run defer js for modern browsers.
 // Note: None of the following should match a mobile UA.
 const char* kDeferJSAllowlist[] = {"*Chrome/*", "*Firefox/*", "*Safari*",
+                                   "*CriOS/*", "*Edg/*", "*EdgA/*",
+                                   "*EdgiOS/*", "*OPR/*",
                                    // Plus IE, see code below.
                                    "*Wget*", "*Googlebot*",
                                    "*Mediapartners-Google*"};
 const char* kDeferJSBlockedlist[] = {
-    "*Firefox/1.*", "*Firefox/2.*", "*Firefox/3.*", "*MSIE 5.*",
-    "*MSIE 6.*",    "*MSIE 7.*",    "*MSIE 8.*",
+    "*Firefox/1.*",
+    "*Firefox/2.*",
+    "*Firefox/3.*",
+    "*MSIE 5.*",
+    "*MSIE 6.*",
+    "*MSIE 7.*",
+    "*MSIE 8.*",
 };
 const char* kDeferJSMobileAllowlist[] = {
     "*AppleWebKit/*",
@@ -112,9 +130,7 @@ const char* kDeferJSMobileAllowlist[] = {
 //  2. Recent Opera support WebP, and some Opera have both "Opera" and
 //     "Firefox" in the user agent.
 const char* kLegacyWebpAllowlist[] = {
-    "*Android *",    "*Firefox/66.*", "*Firefox/67.*",
-    "*Firefox/68.*", "*Firefox/69.*", "*Firefox/70.*",
-    "*Firefox/71.*",  // These Firefox versions are webp capable but don´t send webp header
+    "*Android *",
 };
 
 // Based on https://github.com/apache/incubator-pagespeed-mod/issues/978,
@@ -126,16 +142,13 @@ const char* kLegacyWebpBlockedlist[] = {
     "*Firefox/*",    "*Edge/*",       "*Trident/*",    "*Windows Phone*",
     "*Chrome/*",  // Genuine Chrome always sends Accept: webp.
     "*CriOS/*",   // Paranoia: we should not see Android and CriOS together.
-    "*Firefox/?.*",  "*Firefox/1?.*", "*Firefox/2?.*", "*Firefox/3?.*",
-    "*Firefox/4?.*", "*Firefox/5?.*", "*Firefox/60.*", "*Firefox/61.*",
-    "*Firefox/62.*", "*Firefox/63.*",
-    "*Firefox/64.*",  // Firefox versions not webp capables
 };
 
 // To determine lossless webp support and animated webp support, we must
 // examine the UA.
 const char* kWebpLosslessAlphaAllowlist[] = {
     "*Chrome/??.*", "*Chrome/???.*", "*CriOS/??.*",
+    "*Edg/*", "*EdgA/*", "*EdgiOS/*", "*OPR/*",
     // User agent used only for internal testing.
     "webp-la", "webp-animated",
     "*Firefox/*",  // Do this way to permit Firefox webcapable to convert png
@@ -160,6 +173,10 @@ const char* kWebpLosslessAlphaBlockedlist[] = {
 const char* kWebpAnimatedAllowlist[] = {
     "*Chrome/??.*",
     "*CriOS/??.*",
+    "*Edg/*",
+    "*EdgA/*",
+    "*EdgiOS/*",
+    "*OPR/*",
     "webp-animated",  // User agent for internal testing.
     "*Firefox/*",
 };
@@ -173,8 +190,50 @@ const char* kWebpAnimatedBlockedlist[] = {
     "*Firefox/64.*",
 };
 
+// AVIF support by browser family (approx):
+// Chrome/Chromium 85+, Edge 85+, Opera 71+, Firefox 93+, Safari 16+.
+const char* kAvifRewrittenUrlAllowlist[] = {
+    "*Chrome/*", "*CriOS/*", "*Edg/*", "*EdgA/*", "*EdgiOS/*", "*OPR/*",
+    "*Firefox/*", "*Version/*Safari/*",
+};
+
+const char* kAvifRewrittenUrlBlockedlist[] = {
+    // Chrome/CriOS below 85.
+    "*Chrome/?.*",  "*Chrome/1?.*", "*Chrome/2?.*", "*Chrome/3?.*",
+    "*Chrome/4?.*", "*Chrome/5?.*", "*Chrome/6?.*", "*Chrome/7?.*",
+    "*Chrome/80.*", "*Chrome/81.*", "*Chrome/82.*", "*Chrome/83.*",
+    "*Chrome/84.*", "*CriOS/?.*",   "*CriOS/1?.*",  "*CriOS/2?.*",
+    "*CriOS/3?.*",  "*CriOS/4?.*",  "*CriOS/5?.*",  "*CriOS/6?.*",
+    "*CriOS/7?.*",  "*CriOS/80.*",  "*CriOS/81.*",  "*CriOS/82.*",
+    "*CriOS/83.*",  "*CriOS/84.*",
+    // Edge below 85.
+    "*Edg/?.*", "*Edg/1?.*", "*Edg/2?.*", "*Edg/3?.*", "*Edg/4?.*",
+    "*Edg/5?.*", "*Edg/6?.*", "*Edg/7?.*", "*Edg/80.*", "*Edg/81.*",
+    "*Edg/82.*", "*Edg/83.*", "*Edg/84.*", "*EdgA/?.*", "*EdgA/1?.*",
+    "*EdgA/2?.*", "*EdgA/3?.*", "*EdgA/4?.*", "*EdgA/5?.*", "*EdgA/6?.*",
+    "*EdgA/7?.*", "*EdgA/80.*", "*EdgA/81.*", "*EdgA/82.*", "*EdgA/83.*",
+    "*EdgA/84.*", "*EdgiOS/?.*", "*EdgiOS/1?.*", "*EdgiOS/2?.*",
+    "*EdgiOS/3?.*", "*EdgiOS/4?.*", "*EdgiOS/5?.*", "*EdgiOS/6?.*",
+    "*EdgiOS/7?.*", "*EdgiOS/80.*", "*EdgiOS/81.*", "*EdgiOS/82.*",
+    "*EdgiOS/83.*", "*EdgiOS/84.*",
+    // Opera below 71.
+    "*OPR/?.*", "*OPR/1?.*", "*OPR/2?.*", "*OPR/3?.*", "*OPR/4?.*",
+    "*OPR/5?.*", "*OPR/6?.*", "*OPR/70.*",
+    // Firefox below 93.
+    "*Firefox/?.*", "*Firefox/1?.*", "*Firefox/2?.*", "*Firefox/3?.*",
+    "*Firefox/4?.*", "*Firefox/5?.*", "*Firefox/6?.*", "*Firefox/7?.*",
+    "*Firefox/8?.*", "*Firefox/90.*", "*Firefox/91.*", "*Firefox/92.*",
+    // Safari below 16.
+    "*Version/?.*Safari/*", "*Version/1?.*Safari/*",
+};
+
 const char* kInsertDnsPrefetchAllowlist[] = {
     "*Chrome/*",
+    "*CriOS/*",
+    "*Edg/*",
+    "*EdgA/*",
+    "*EdgiOS/*",
+    "*OPR/*",
     "*Firefox/*",
     "*Safari/*",
     // Plus IE, see code below.
@@ -207,12 +266,14 @@ const char* kTabletUserAgentAllowlist[] = {
                   // checks for UserAgents should first check the mobile
                   // allowlists and blockedlists and only then check the tablet
                   // allowlist for correct results.
-    "*iPad*", "*TouchPad*", "*Silk-Accelerated*", "*Kindle Fire*"};
+    "*iPad*", "*TouchPad*", "*Silk-Accelerated*", "*Kindle Fire*",
+    "*Android*Tablet*", "*SM-T*"};
 
 // Allowlist used for doing the mobile-user-agent check, which also feeds
 // into the device type used for storing properties in the property cache.
 const char* kMobileUserAgentAllowlist[] = {
     "*Mozilla*Android*Mobile*",
+    "*Android*Mobile*",
     "*iPhone*",
     "*BlackBerry*",
     "*Opera Mobi*",
@@ -225,17 +286,25 @@ const char* kMobileUserAgentAllowlist[] = {
     "*portalmmm*",
     "*DoCoMo*",
     "*Obigo*",
+    "*FxiOS/*",
+    "*EdgiOS/*",
+    "*EdgA/*",
+    "*SamsungBrowser*Mobile*",
     "AdsBot-Google-Mobile",
 };
 
 // Blockedlist used for doing the mobile-user-agent check.
 const char* kMobileUserAgentBlockedlist[] = {
-    "*Mozilla*Android*Silk*Mobile*", "*Mozilla*Android*Kindle Fire*Mobile*"};
+    "*Mozilla*Android*Silk*Mobile*",
+    "*Mozilla*Android*Kindle Fire*Mobile*",
+    "*iPad*",
+};
 
 // Allowlist used for mobilization.
 const char* kMobilizationUserAgentAllowlist[] = {
     "*Android*",  "*Chrome/*",     "*Firefox/*", "*iPad*", "*iPhone*",
-    "*iPod*",     "*Opera*",       "*Safari*",   "*Wget*",
+    "*iPod*",     "*Opera*",       "*Safari*",   "*Wget*", "*Edg/*",
+    "*EdgA/*",    "*EdgiOS/*",     "*OPR/*",     "*FxiOS/*",
     "*CriOS/*",    // Chrome for iOS.
     "*Android *",  // Native Android browser (see blockedlist below).
     "*iPhone*",   "AdsBot-Google*"};
@@ -268,10 +337,10 @@ const char* kIeUserAgents[] = {
 };
 const int kIEBefore11Index = 0;
 
-// Match either 'CriOS' (iOS Chrome) or 'Chrome'. ':?' marks a non-capturing
-// group.
+// Match Chromium-family browser versions where available as a 4-number tuple.
+// ':?' marks a non-capturing group.
 const char* kChromeVersionPattern =
-    "(?:Chrome|CriOS)/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)";
+    "(?:Chrome|CriOS|Edg|EdgA|EdgiOS|OPR)/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)";
 
 // Device strings must not include wildcards.
 struct Dimension {
@@ -281,6 +350,11 @@ struct Dimension {
 };
 
 const Dimension kKnownScreenDimensions[] = {
+    // Legacy fallback map used only when UA contains one of these exact
+    // model names.
+    {"iPhone", 1170, 2532},
+    {"iPad", 2048, 2732},
+    {"Pixel 7", 1080, 2400},
     {"Galaxy Nexus", 720, 1280}, {"GT-I9300", 720, 1280},
     {"GT-N7100", 720, 1280},     {"Nexus 4", 768, 1280},
     {"Nexus 10", 1600, 2560},    {"Nexus S", 480, 800},
@@ -339,6 +413,12 @@ UserAgentMatcher::UserAgentMatcher()
   }
   for (int i = 0, n = arraysize(kWebpAnimatedBlockedlist); i < n; ++i) {
     supports_webp_animated_.Disallow(kWebpAnimatedBlockedlist[i]);
+  }
+  for (int i = 0, n = arraysize(kAvifRewrittenUrlAllowlist); i < n; ++i) {
+    supports_avif_rewritten_urls_.Allow(kAvifRewrittenUrlAllowlist[i]);
+  }
+  for (int i = 0, n = arraysize(kAvifRewrittenUrlBlockedlist); i < n; ++i) {
+    supports_avif_rewritten_urls_.Disallow(kAvifRewrittenUrlBlockedlist[i]);
   }
   for (int i = 0, n = arraysize(kInsertDnsPrefetchAllowlist); i < n; ++i) {
     supports_dns_prefetch_.Allow(kInsertDnsPrefetchAllowlist[i]);
@@ -433,6 +513,11 @@ bool UserAgentMatcher::SupportsWebpLosslessAlpha(
 bool UserAgentMatcher::SupportsWebpAnimated(
     const StringPiece& user_agent) const {
   return supports_webp_animated_.Match(user_agent, false);
+}
+
+bool UserAgentMatcher::SupportsAvifRewrittenUrls(
+    const StringPiece& user_agent) const {
+  return supports_avif_rewritten_urls_.Match(user_agent, false);
 }
 
 UserAgentMatcher::DeviceType UserAgentMatcher::GetDeviceTypeForUAAndHeaders(

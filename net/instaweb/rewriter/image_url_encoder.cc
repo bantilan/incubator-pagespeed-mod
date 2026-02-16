@@ -242,10 +242,11 @@ void ImageUrlEncoder::SetLibWebpLevel(
              (options.Enabled(RewriteOptions::kRecompressWebp) ||
               options.Enabled(RewriteOptions::kConvertToWebpLossless))) {
     libwebp_level = ResourceContext::LIBWEBP_LOSSY_LOSSLESS_ALPHA;
-  } else if (request_properties.SupportsWebpRewrittenUrls() &&
-             (options.Enabled(RewriteOptions::kRecompressWebp) ||
-              options.Enabled(RewriteOptions::kConvertToWebpLossless) ||
-              options.Enabled(RewriteOptions::kConvertJpegToWebp) ||
+  } else if ((request_properties.SupportsWebpRewrittenUrls() &&
+              (options.Enabled(RewriteOptions::kRecompressWebp) ||
+               options.Enabled(RewriteOptions::kConvertToWebpLossless) ||
+               options.Enabled(RewriteOptions::kConvertJpegToWebp))) ||
+             (request_properties.SupportsAvifRewrittenUrls() &&
               options.Enabled(RewriteOptions::kConvertToAvif))) {
     libwebp_level = ResourceContext::LIBWEBP_LOSSY_ONLY;
   }
