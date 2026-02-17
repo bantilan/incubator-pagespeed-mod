@@ -88,6 +88,7 @@ const char kBeaconUrlQueryParam[] = "url";
 const char kBeaconEtsQueryParam[] = "ets";
 const char kBeaconOptionsHashQueryParam[] = "oh";
 const char kBeaconCriticalImagesQueryParam[] = "ci";
+const char kBeaconLcpImageQueryParam[] = "lcp";
 const char kBeaconRenderedDimensionsQueryParam[] = "rd";
 const char kBeaconCriticalCssQueryParam[] = "cs";
 const char kBeaconNonceQueryParam[] = "n";
@@ -622,6 +623,14 @@ bool ServerContext::HandleBeacon(StringPiece params, StringPiece user_agent,
   if (query_params.Lookup1Unescaped(kBeaconCriticalImagesQueryParam,
                                     &query_param_str)) {
     html_critical_images_set.reset(CommaSeparatedStringToSet(query_param_str));
+  }
+  if (query_params.Lookup1Unescaped(kBeaconLcpImageQueryParam,
+                                    &query_param_str) &&
+      !query_param_str.empty()) {
+    if (html_critical_images_set == nullptr) {
+      html_critical_images_set.reset(new StringSet());
+    }
+    html_critical_images_set->insert(query_param_str);
   }
 
   std::unique_ptr<StringSet> critical_css_selector_set;

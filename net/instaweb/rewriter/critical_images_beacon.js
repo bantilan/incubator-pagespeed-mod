@@ -63,6 +63,82 @@ pagespeed.CriticalImages.Beacon_ = function(
    * @private {!Object.<string, boolean>}
    */
   this.criticalImagesKeys_ = {};
+
+  /**
+   * Hash key for the latest LCP image seen by PerformanceObserver.
+   * @private {string}
+   */
+  this.lcpImage_ = '';
+
+  /**
+   * LCP observer instance when supported by the browser.
+   * @private {?Object}
+   */
+  this.lcpObserver_ = null;
+
+  this.setupLcpObserver_();
+};
+
+
+/**
+ * Records an LCP entry if it corresponds to a rewritten image hash.
+ * @param {?Object} entry
+ * @private
+ */
+pagespeed.CriticalImages.Beacon_.prototype.trackLcpEntry_ = function(entry) {
+  if (!entry || !entry.element || !entry.element.getAttribute) {
+    return;
+  }
+  var key = entry.element.getAttribute('data-pagespeed-url-hash');
+  if (key) {
+    this.lcpImage_ = key;
+  }
+};
+
+
+/**
+ * Enables LCP collection using PerformanceObserver where available.
+ * Falls back to legacy criticality checks for unsupported browsers.
+ * @private
+ */
+pagespeed.CriticalImages.Beacon_.prototype.setupLcpObserver_ = function() {
+  if (!window.PerformanceObserver) {
+    return;
+  }
+
+  var beacon = this;
+  var finalize = function() {
+    if (!beacon.lcpObserver_) {
+      return;
+    }
+    if (beacon.lcpObserver_.takeRecords) {
+      var records = beacon.lcpObserver_.takeRecords();
+      for (var i = 0; i < records.length; ++i) {
+        beacon.trackLcpEntry_(records[i]);
+      }
+    }
+    beacon.lcpObserver_.disconnect();
+    beacon.lcpObserver_ = null;
+  };
+
+  try {
+    beacon.lcpObserver_ = new PerformanceObserver(function(list) {
+      var entries = list.getEntries();
+      for (var i = 0; i < entries.length; ++i) {
+        beacon.trackLcpEntry_(entries[i]);
+      }
+    });
+    beacon.lcpObserver_.observe(
+        {type: 'largest-contentful-paint', buffered: true});
+    pagespeedutils.addHandler(document, 'visibilitychange', function() {
+      if (document.visibilityState == 'hidden') {
+        finalize();
+      }
+    });
+    pagespeedutils.addHandler(window, 'pagehide', finalize);
+  } catch (e) {
+    beacon.lcpObserver_ = null;
+  }
 };
 
 
@@ -236,6 +312,14 @@ pagespeed.CriticalImages.Beacon_.prototype.checkCriticalImages_ = function() {
       if (data.length + tmp.length <= pagespeedutils.MAX_POST_SIZE) {
         data += tmp;
       }
+    }
+  }
+
+  if (this.lcpImage_) {
+    var lcp = '&lcp=' + encodeURIComponent(this.lcpImage_);
+    if (data.length + lcp.length <= pagespeedutils.MAX_POST_SIZE) {
+      data += lcp;
+      isDataAvailable = true;
     }
   }
 
