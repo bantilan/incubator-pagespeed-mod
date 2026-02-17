@@ -67,8 +67,7 @@ void PrioritizeLcpImagesFilter::StartElementImpl(HtmlElement* element) {
     in_body_ = true;
     return;
   }
-  if (noscript_element() != NULL || prioritized_count_ >= kMaxPrioritizedImages
-      || !in_body_) {
+  if (noscript_element() != NULL || !in_body_) {
     return;
   }
   if (element->keyword() != HtmlName::kImg || !driver()->IsRewritable(element)) {
@@ -79,7 +78,11 @@ void PrioritizeLcpImagesFilter::StartElementImpl(HtmlElement* element) {
   if (!IsEligibleImage(element, &src)) {
     return;
   }
-  PrioritizeImage(element, src);
+  if (prioritized_count_ < kMaxPrioritizedImages) {
+    PrioritizeImage(element, src);
+  } else {
+    AddLazyLoadingHint(element);
+  }
 }
 
 void PrioritizeLcpImagesFilter::EndElementImpl(HtmlElement* element) {
@@ -185,6 +188,21 @@ void PrioritizeLcpImagesFilter::PrioritizeImage(
   driver()->log_record()->SetRewriterLoggingStatus(
       RewriteOptions::FilterId(RewriteOptions::kPrioritizeLcpImages),
       RewriterApplication::APPLIED_OK);
+}
+
+void PrioritizeLcpImagesFilter::AddLazyLoadingHint(HtmlElement* element) {
+  HtmlElement::Attribute* loading_attr = element->FindAttribute("loading");
+  if (loading_attr != NULL && loading_attr->DecodedValueOrNull() != NULL) {
+    // Respect explicit eager loading from origin/app code.
+    if (StringCaseEqual(loading_attr->DecodedValueOrNull(), "eager")) {
+      return;
+    }
+    if (!StringCaseEqual(loading_attr->DecodedValueOrNull(), "lazy")) {
+      loading_attr->SetValue("lazy");
+    }
+    return;
+  }
+  driver()->AddAttribute(element, "loading", "lazy");
 }
 
 }  // namespace net_instaweb

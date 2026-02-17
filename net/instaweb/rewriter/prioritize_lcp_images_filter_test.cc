@@ -60,6 +60,25 @@ TEST_F(PrioritizeLcpImagesFilterTest, PrioritizesFirstImage) {
   EXPECT_EQ(AddHtmlBody(expected), output_);
 }
 
+TEST_F(PrioritizeLcpImagesFilterTest, AddsNativeLazyLoadingToLaterImages) {
+  const GoogleString input =
+      "<head></head><body>"
+      "<img src=\"/hero.jpg\">"
+      "<img src=\"/below-fold.jpg\">"
+      "<img loading=\"eager\" src=\"/keep-eager.jpg\">"
+      "</body>";
+  const GoogleString expected =
+      "<head><link rel=\"preload\" as=\"image\" href=\"/hero.jpg\" "
+      "fetchpriority=\"high\"/></head><body>"
+      "<img src=\"/hero.jpg\" fetchpriority=\"high\" "
+      "data-pagespeed-no-defer=\"1\" pagespeed_no_defer=\"1\"/>"
+      "<img src=\"/below-fold.jpg\" loading=\"lazy\"/>"
+      "<img loading=\"eager\" src=\"/keep-eager.jpg\"/>"
+      "</body>";
+  Parse("add_native_lazy_to_later_images", input);
+  EXPECT_EQ(AddHtmlBody(expected), output_);
+}
+
 TEST_F(PrioritizeLcpImagesFilterTest, PrioritizesImgInsidePicture) {
   const GoogleString input =
       "<head></head><body>"

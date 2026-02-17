@@ -29,12 +29,14 @@
 
 namespace net_instaweb {
 
-// Rewriter that heuristically prioritizes an early in-viewport image:
-// 1) removes loading="lazy"
+// Rewriter that heuristically prioritizes an early in-viewport image and
+// applies native lazy loading for later images:
+// 1) for the first candidate image, removes loading="lazy"
 // 2) adds fetchpriority="high"
 // 3) inserts <link rel="preload" as="image" href="..." fetchpriority="high">
 //    in <head>
 // 4) adds pagespeed_no_defer/data-pagespeed-no-defer to avoid defer filters
+// 5) for later candidate images, adds loading="lazy" unless explicitly eager
 class PrioritizeLcpImagesFilter : public CommonFilter {
  public:
   explicit PrioritizeLcpImagesFilter(RewriteDriver* driver);
@@ -51,6 +53,7 @@ class PrioritizeLcpImagesFilter : public CommonFilter {
   bool IsEligibleImage(HtmlElement* element, GoogleString* src_out) const;
   void InsertPreloadHint(HtmlElement* element, const GoogleString& src);
   void PrioritizeImage(HtmlElement* element, const GoogleString& src);
+  void AddLazyLoadingHint(HtmlElement* element);
   bool IsHiddenByStyle(HtmlElement* element) const;
   bool LooksLikeTinyTracker(HtmlElement* element) const;
 
