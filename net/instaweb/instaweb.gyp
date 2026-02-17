@@ -52,16 +52,23 @@
     # Java API, which lets you setDependencySorting(true), but with the command
     # line client the best you can do is find all the js files that make up the
     # closure library and pass them to the compiler in a deterministic order.
-    'include_closure_library':
-        '<!(echo --dependency_mode=STRICT'
-        '    $(find <(instaweb_root)/third_party/closure_library/closure '
+    'include_closure_library_files':
+        '<!(echo $(find <(instaweb_root)/third_party/closure_library/closure '
         '           <(instaweb_root)/third_party/closure_library/third_party '
         '           -name "*.js"'
         '           | grep -v _test.js'
+        '           | grep -v _perf.js'
+        '           | grep -v tester.js'
+        '           | grep -v testdefinition.js'
         '           | grep -v "/goog/demos/"'
         '           | grep -v "/goog/testing/"'
         '           | grep -v "/goog/test_module.js"'
         '           | sort | sed "s/^/--js /"))',
+    'include_closure_library':
+        '<!(echo --dependency_mode=STRICT'
+        '    <(include_closure_library_files))',
+    'include_closure_base_only':
+        '<!(echo --js <(instaweb_root)/third_party/closure_library/closure/goog/base.js)',
     # Setting chromium_code to 1 turns on extra warnings. Also, if the compiler
     # is whitelisted in our common.gypi, those warnings will get treated as
     # errors.
@@ -104,6 +111,9 @@
       'variables': {
         'js_dir': 'rewriter',
         'closure_build_type': 'dbg',
+        'extra_closure_flags': [
+          '<@(include_closure_base_only)',
+        ],
         'js_includes': [ 'js/js_utils.js' ],
       },
       'sources': [ '<@(js_files_utils_dep)', ],
@@ -113,6 +123,9 @@
       'target_name': 'js_utils_dep_opt',
       'variables': {
         'js_dir': 'rewriter',
+        'extra_closure_flags': [
+          '<@(include_closure_base_only)',
+        ],
         'js_includes': [ 'js/js_utils.js' ],
       },
       'sources': [ '<@(js_files_utils_dep)', ],
