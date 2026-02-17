@@ -60,7 +60,6 @@
         '           | grep -v _test.js'
         '           | grep -v "/goog/demos/"'
         '           | grep -v "/goog/testing/"'
-        '           | grep -v "/goog/labs/"'
         '           | grep -v "/goog/test_module.js"'
         '           | sort | sed "s/^/--js /"))',
     # Setting chromium_code to 1 turns on extra warnings. Also, if the compiler

@@ -60,6 +60,53 @@ echo Building PSOL binaries...
 
 MAKE_ARGS=(V=1 BUILDTYPE=$buildtype)
 
+patch_closure_define_assignment() {
+  local py_bin=""
+  if command -v python3 >/dev/null 2>&1; then
+    py_bin=python3
+  elif command -v python >/dev/null 2>&1; then
+    py_bin=python
+  else
+    return 0
+  fi
+
+  "$py_bin" - <<'PY'
+import pathlib
+import re
+
+roots = [
+    pathlib.Path("third_party/closure_library/closure/goog"),
+    pathlib.Path("third_party/closure_library/third_party/closure/goog"),
+]
+pattern = re.compile(r"^(\s*)goog\.define\('([A-Za-z0-9_.$]+)'\s*,\s*(.*?)\);\s*(//.*)?\s*$")
+updated_files = 0
+updated_lines = 0
+
+for root in roots:
+    if not root.exists():
+        continue
+    for path in root.rglob("*.js"):
+        text = path.read_text(encoding="utf-8")
+        out = []
+        changed = False
+        for line in text.splitlines(True):
+            m = pattern.match(line.rstrip("\n"))
+            if not m:
+                out.append(line)
+                continue
+            indent, symbol, rhs, comment = m.groups()
+            suffix = f" {comment}" if comment else ""
+            out.append(f"{indent}{symbol} = goog.define('{symbol}', {rhs});{suffix}\n")
+            changed = True
+            updated_lines += 1
+        if changed:
+            path.write_text("".join(out), encoding="utf-8")
+            updated_files += 1
+
+print(f"Patched goog.define assignment form in {updated_files} files ({updated_lines} lines).")
+PY
+}
+
 # Compatibility patch for modern glibc where memmem is already declared.
 # Older aprutil code ships a fallback with an incompatible signature.
 APRUTIL_BRIGADE_C="third_party/aprutil/src/buckets/apr_brigade.c"
@@ -70,6 +117,10 @@ if [ -f "$APRUTIL_BRIGADE_C" ]; then
     -e 's/\bpos = memmem(/pos = aprutil_memmem(/' \
     "$APRUTIL_BRIGADE_C"
 fi
+
+# Closure compiler used in this build rejects bare goog.define(...) statements.
+# Rewrite them to assignment form expected by newer checks.
+patch_closure_define_assignment
 
 if command -v python >/dev/null 2>&1; then
   PYTHON_BIN=python
