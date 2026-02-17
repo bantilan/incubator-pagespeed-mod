@@ -305,12 +305,10 @@ pagespeed.LazyloadImages.prototype.loadIfVisibleAndMaybeBeacon =
         // Remove attributes that are no longer needed.
         element.removeAttribute('onload');
         if (element.tagName && element.tagName == 'IMG') {
-          // If CriticalImages is defined, we should add the per-image
-          // checkImageForCriticality logic because the lazyload_images_filter
-          // would have removed this.
+          // If CriticalImages is defined, signal completion so beaconing can
+          // run after lazyloaded images finish.
           if (pagespeed.CriticalImages) {
             pagespeedutils.addHandler(element, 'load', function(e) {
-              pagespeed.CriticalImages.checkImageForCriticality(this);
               if (context.onload_done_) {
                 context.imgs_to_load_before_beaconing_--;
                 if (context.imgs_to_load_before_beaconing_ == 0) {

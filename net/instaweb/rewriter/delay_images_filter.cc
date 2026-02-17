@@ -54,9 +54,7 @@ const char DelayImagesFilter::kImageOnloadCode[] =
     "pagespeed.switchToHighResAndMaybeBeacon(this);";
 
 // Js snippet with the code for image elements to load the high resolution
-// image once onload triggers (for the low resolution data url). This code
-// also adds the checkImageForCriticality logic when the page has been
-// instrumented (i.e. when pagespeed.CriticalImages is defined).
+// image once onload triggers (for the low resolution data url).
 const char DelayImagesFilter::kImageOnloadJsSnippet[] =
     "window['pagespeed'] = window['pagespeed'] || {};"
     "var pagespeed = window['pagespeed'];"
@@ -66,8 +64,6 @@ const char DelayImagesFilter::kImageOnloadJsSnippet[] =
     "var srcset = elem.getAttribute('data-pagespeed-high-res-srcset');"
     "if (srcset) {elem.srcset = srcset;}"
     "elem.src = elem.getAttribute('data-pagespeed-high-res-src');"
-    "if (pagespeed.CriticalImages) {elem.onload = "
-    "pagespeed.CriticalImages.checkImageForCriticality(elem);}"
     "}, 0);"
     "};";
 

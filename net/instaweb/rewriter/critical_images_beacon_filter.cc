@@ -43,7 +43,7 @@ namespace net_instaweb {
 const char CriticalImagesBeaconFilter::kCriticalImagesBeaconAddedCount[] =
     "critical_images_beacon_filter_script_added_count";
 
-// Onload code for img elements to detect whether they are critical or not.
+// Legacy onload marker retained for compatibility with other filters/tests.
 const char* CriticalImagesBeaconFilter::kImageOnloadCode =
     "pagespeed.CriticalImages.checkImageForCriticality(this);";
 
@@ -139,9 +139,7 @@ void CriticalImagesBeaconFilter::MaybeAddBeaconJavascript(
   HtmlElement* script = driver()->NewElement(nullptr, HtmlName::kScript);
   driver()->AddAttribute(script, HtmlName::kDataPagespeedNoDefer,
                          StringPiece());
-  // Always add the beacon js before the current node, because the current node
-  // might be an img node that needs the beacon js for its
-  // checkImageForCriticality onload handler.
+  // Always add the beacon js before the current node.
   driver()->InsertNodeBeforeNode(element, script);
   AddJsToElement(js, script);
   critical_images_beacon_added_count_->Add(1);
@@ -178,18 +176,7 @@ void CriticalImagesBeaconFilter::EndElementImpl(HtmlElement* element) {
         if (insert_beacon_js_) {
           driver()->AddAttribute(element, HtmlName::kDataPagespeedUrlHash,
                                  hash_str);
-          if (element->keyword() == HtmlName::kImg &&
-              CanAddPagespeedOnloadToImage(*element)) {
-            // Add an onload handler only if one is not already specified on the
-            // non-rewritten page.
-            driver()->AddAttribute(element, HtmlName::kOnload,
-                                   kImageOnloadCode);
-            // TODO(sligocki): Should we add onerror handler here too?
-            // If beacon javascript has not been added yet, we need to add it
-            // before the current node because we are going to use the js for
-            // the image criticality check on image-onload.
-            MaybeAddBeaconJavascript(element);
-          }
+          MaybeAddBeaconJavascript(element);
         }
       }
     }

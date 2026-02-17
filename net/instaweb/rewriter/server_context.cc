@@ -87,7 +87,6 @@ namespace {
 const char kBeaconUrlQueryParam[] = "url";
 const char kBeaconEtsQueryParam[] = "ets";
 const char kBeaconOptionsHashQueryParam[] = "oh";
-const char kBeaconCriticalImagesQueryParam[] = "ci";
 const char kBeaconLcpImageQueryParam[] = "lcp";
 const char kBeaconRenderedDimensionsQueryParam[] = "rd";
 const char kBeaconCriticalCssQueryParam[] = "cs";
@@ -620,10 +619,6 @@ bool ServerContext::HandleBeacon(StringPiece params, StringPiece user_agent,
   // Beacon property callback takes ownership of both critical images sets.
   std::unique_ptr<StringSet> html_critical_images_set;
   std::unique_ptr<StringSet> css_critical_images_set;
-  if (query_params.Lookup1Unescaped(kBeaconCriticalImagesQueryParam,
-                                    &query_param_str)) {
-    html_critical_images_set.reset(CommaSeparatedStringToSet(query_param_str));
-  }
   if (query_params.Lookup1Unescaped(kBeaconLcpImageQueryParam,
                                     &query_param_str) &&
       !query_param_str.empty()) {
