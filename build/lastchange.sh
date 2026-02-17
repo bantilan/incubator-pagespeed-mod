@@ -44,8 +44,13 @@ while [ $# -ge 2 ]; do
 done
 
 if [ -z $DEFAULT_FILE ]; then
-  KEY='Last Changed Rev: '
-  REVISION=$(git rev-list --all --count)
+  REVISION_COUNT=$(git rev-list --all --count)
+  HASH_LEN=${LASTCHANGE_HASH_LEN:-7}
+  SHORT_HASH=$(git rev-parse --short=$HASH_LEN HEAD)
+  REVISION=$REVISION_COUNT
+  if [ -n "$SHORT_HASH" ]; then
+    REVISION="${REVISION}-${SHORT_HASH}"
+  fi
   echo LASTCHANGE=$REVISION > $OUT_FILE
 else
   cat $DEFAULT_FILE > $OUT_FILE
