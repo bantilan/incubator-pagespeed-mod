@@ -57,6 +57,7 @@
           '--js', '<(RULE_INPUT_PATH)',
           '--js_output_file', '<(output_file)',
           '--output_wrapper=\'(function(){%output%})();\'',
+          '--process_closure_primitives=false',
           '--generate_exports',
           '--externs=<(DEPTH)/net/instaweb/js/externs.js',
           '--warning_level=VERBOSE',

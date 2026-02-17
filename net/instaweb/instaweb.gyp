@@ -57,7 +57,12 @@
         '    $(find <(instaweb_root)/third_party/closure_library/closure '
         '           <(instaweb_root)/third_party/closure_library/third_party '
         '           -name "*.js"'
-        '           | grep -v _test.js | sort | sed "s/^/--js /"))',
+        '           | grep -v _test.js'
+        '           | grep -v "/goog/demos/"'
+        '           | grep -v "/goog/testing/"'
+        '           | grep -v "/goog/labs/"'
+        '           | grep -v "/goog/test_module.js"'
+        '           | sort | sed "s/^/--js /"))',
     # Setting chromium_code to 1 turns on extra warnings. Also, if the compiler
     # is whitelisted in our common.gypi, those warnings will get treated as
     # errors.

@@ -28,16 +28,24 @@ DIR="$1"
 
 # If the version of the compiler is updated, the closure library version in
 # bazel/repositories.bzl must also be updated.
-VERSION=20191111
+# Override with CLOSURE_COMPILER_VERSION when testing newer compiler builds.
+VERSION="${CLOSURE_COMPILER_VERSION:-20191111}"
 ZIP=compiler-$VERSION.zip
 JAR_IN=$DIR/closure-compiler-v$VERSION.jar
 JAR=$DIR/compiler.jar
+CLOSURE_DOWNLOAD_BASE="${CLOSURE_DOWNLOAD_BASE:-https://dl.google.com/closure-compiler}"
+MAVEN_BASE="${MAVEN_BASE:-https://repo1.maven.org/maven2/com/google/javascript/closure-compiler}"
 
 # Download and unzip the compiler if we haven't before or if it is the wrong
 # verison.
 if [[ ! -e $JAR || -z "$(java -jar $JAR --version | grep $VERSION)" ]]
 then
-  curl https://dl.google.com/closure-compiler/$ZIP --create-dirs -o $DIR/$ZIP
-  unzip -o $DIR/$ZIP -d $DIR
-  cp $JAR_IN $JAR
+  mkdir -p "$DIR"
+  if curl -fL "$CLOSURE_DOWNLOAD_BASE/$ZIP" -o "$DIR/$ZIP"; then
+    unzip -o "$DIR/$ZIP" -d "$DIR"
+    cp "$JAR_IN" "$JAR"
+  else
+    curl -fL "$MAVEN_BASE/v$VERSION/closure-compiler-v$VERSION.jar" \
+      -o "$JAR"
+  fi
 fi
